@@ -63,7 +63,7 @@ enableEmoji = true  # Shorthand emojis in content files - https://gohugo.io/func
 
   [[menu.main]]
     name = "Download"
-    url = "release/"
+    url = "wip/"
     weight = 10
 
   [[menu.main]]
