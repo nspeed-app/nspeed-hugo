@@ -1,0 +1,68 @@
+baseURL: 'https://nspeed.app'
+
+defaultContentLanguage: en
+
+languages:
+  fr:
+    contentDir: content/fr
+    disabled: false
+    languageCode: fr-FR
+    languageDirection: ltr
+    languageName: Francois
+    params:
+      subtitle: Références, Tutoriels et Explications
+    title: Documentation
+    weight: 1
+  en:
+    contentDir: content/en
+    disabled: false
+    languageCode: en-US
+    languageDirection: ltr
+    languageName: English
+    params:
+      subtitle: Reference, Tutorials, and Explanations
+    title: Project Documentation
+    weight: 2
+
+title: NSpeed
+theme: hermit
+pygmentsCodefences: true
+pygmentsUseClasses: true
+rssLimit: 10
+copyright: >-
+  This work is licensed under a Creative Commons Attribution-NonCommercial 4.0
+  International License.
+enableEmoji: true
+# Go go-import 
+repo: 'https://github.com/nspeed-app'
+packages:
+  - nspeed.appp/nspeed
+# review later
+author:
+  name: Jean-Francois Giorgi and The NSpeed authors
+taxonomies:
+  tag: tags
+params:
+  dateform: 'Jan 2, 2006'
+  dateformShort: Jan 2
+  dateformNum: '2006-01-02'
+  dateformNumTime: '2006-01-02 15:04 -0700'
+  themeColor: '#1a2dd9'
+  homeSubtitle: A high performance multi-threaded network bandwidth measurement tool.
+  footerCopyright: ' &#183; <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>'
+  justifyContent: false
+  relatedPosts: false
+  code_copy_button: true
+  social:
+    - name: email
+      url: 'mailto:info@nspeed.app'
+    - name: github
+      url: 'https://github.com/nspeed-app/nspeed'
+menu:
+  main:
+    - name: Download
+      url: wip/
+      weight: 10
+    - name: About
+      url: about-nspeed/
+      weight: 20
