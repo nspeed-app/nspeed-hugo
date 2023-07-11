@@ -1,31 +1,30 @@
 baseURL: 'https://nspeed.app'
-
-defaultContentLanguage: en
-
+defaultContentLanguage: "en"
 languages:
-  fr:
-    contentDir: content/fr
-    disabled: false
-    languageCode: fr-FR
-    languageDirection: ltr
-    languageName: Francois
-    params:
-      subtitle: Références, Tutoriels et Explications
-    title: Documentation
-    weight: 1
   en:
-    contentDir: content/en
     disabled: false
     languageCode: en-US
     languageDirection: ltr
     languageName: English
     params:
       subtitle: Reference, Tutorials, and Explanations
-    title: Project Documentation
+    title: NSpeed
+    weight: 1
+  fr:
+    disabled: false
+    languageCode: fr-FR
+    languageDirection: ltr
+    languageName: Français
+    params:
+      subtitle: Références, Tutoriels et Explications
+    title: NSpeed
     weight: 2
 
 title: NSpeed
 theme: hermit
+disableKinds: 
+  - taxonomy
+  - term
 pygmentsCodefences: true
 pygmentsUseClasses: true
 rssLimit: 10
@@ -61,7 +60,7 @@ params:
 menu:
   main:
     - name: Download
-      url: wip/
+      url: https://github.com/nspeed-app/nspeed/releases/
       weight: 10
     - name: About
       url: about-nspeed/

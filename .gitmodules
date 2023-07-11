@@ -2,3 +2,6 @@
 	path = public
 	url = git@github.com:nspeed-app/nspeed-app.github.io.git
 	branch = master
+[submodule "themes/hermit"]
+	path = themes/hermit
+	url = https://github.com/Track3/hermit
