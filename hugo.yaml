@@ -32,16 +32,14 @@ copyright: >-
   This work is licensed under a Creative Commons Attribution-NonCommercial 4.0
   International License.
 enableEmoji: true
-# Go go-import 
-repo: 'https://github.com/nspeed-app'
-packages:
-  - nspeed.appp/nspeed
 # review later
 author:
   name: Jean-Francois Giorgi and The NSpeed authors
-taxonomies:
-  tag: tags
+
 params:
+  # Go go-import 
+  goRepo: 'https://github.com/nspeed-app/nspeed'
+  goPackage: 'nspeed.app/nspeed'
   dateform: 'Jan 2, 2006'
   dateformShort: Jan 2
   dateformNum: '2006-01-02'
