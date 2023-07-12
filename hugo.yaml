@@ -37,9 +37,10 @@ author:
   name: Jean-Francois Giorgi and The NSpeed authors
 
 params:
-  # Go go-import 
-  goRepo: 'https://github.com/nspeed-app/nspeed'
-  goPackage: 'nspeed.app/nspeed'
+  # +go-import 
+  goPrefix: 'nspeed.app'
+  redirect: false
+  # -go-import 
   dateform: 'Jan 2, 2006'
   dateformShort: Jan 2
   dateformNum: '2006-01-02'
