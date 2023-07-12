@@ -1,4 +1,5 @@
 ---
+Title: nspeed
 aliases:
  - /nspeed
  - /nspeed/utils
