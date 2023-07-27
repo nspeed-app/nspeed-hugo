@@ -1,5 +1,6 @@
 {{ define "head" }}
 	{{ if .Params.goPackage }}
     <meta name="go-import" content="{{ .Params.goPackage }} {{ .Params.goVCS }} {{ .Params.goRepo }}">
+    <meta http-equiv="refresh" content="0;URL='{{ .Params.goDoc }}'">
     {{ end }}
 {{ end }}
