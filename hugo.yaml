@@ -32,11 +32,18 @@ copyright: >-
   This work is licensed under a Creative Commons Attribution-NonCommercial 4.0
   International License.
 enableEmoji: true
-# review later
+
+staticDir:
+- assets
+- static
+- tuto
+
 author:
-  name: Jean-Francois Giorgi and The NSpeed authors
+    name: Jean-Francois Giorgi
 
 params:
+  author:
+    name: Jean-Francois Giorgi
   # +go-import 
   goPrefix: 'nspeed.app'
   redirect: false

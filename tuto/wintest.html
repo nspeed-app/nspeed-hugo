@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+    <script>
+        function CopyToClipboard() {
+            var elem = event.target.previousElementSibling;
+
+            /* Copy the text inside the text field */
+            navigator.clipboard.writeText(elem.textContent);
+
+            /* Alert the copied text */
+            //alert("Copied the text: " + elem.textContent);
+            console.log("'" + elem.textContent + "' sent to clipboard")
+
+        }
+    </script>
+</head>
+
+<body>
+    <h2>TEST DEBIT POUR WINDOWS</h2>
+    <h3><strong>Lancer 'powershell'</strong></h3>
+    <p>il y a plusieurs m&eacute;thodes dont:</p>
+    <ul>
+        <li>en cliquant sur la loupe (recherche) en bas de la barre Windows et saisir 'powershell'</li>
+        <li>en appuyant sur la touche ⊞ (touche Windows ) et la touche X en meme temps et choisir 'powershell' dans le
+            menu qui apparait.</li>
+    </ul>
+    <p>Dans la fen&ecirc;tre qui apparait (fond bleu en g&eacute;n&eacute;ral) ,saisir ou copier/coller les commandes
+        suivantes:</p>
+    <p><span style="color: #0000ff;">Get-NetAdapter</span>
+        <button onclick="CopyToClipboard()">copier</button>
+    </p>
+    <p><span style="color: #0000ff;">Get-NetAdapterHardwareInfo</span>
+        <button onclick="CopyToClipboard()">copier</button>
+    </p>
+    <p>et poster leurs r&eacute;sultats.</p>
+    <h3><strong>Ensuite faire un test avec NSpeed</strong>:</h3>
+    <p>Dans la meme fen&ecirc;tre:</p>
+    <p><span style="color: #0000ff;">wget -outfile nspeed.exe
+            https://dl.nspeed.app/nspeed-client/latest/nspeed_windows_amd64.exe </span> <button
+            onclick="CopyToClipboard()">copier</button>
+    </p>
+    <p>cela va t&eacute;l&eacute;charger le programme nspeed qui permet de faire des mesures de d&eacute;bit en ligne de
+        commande.</p>
+    <p>Puis nous donner les r&eacute;sultats de:</p>
+    <p><span style="color: #0000ff;">./nspeed.exe -cpu get http://bouygues.testdebit.info/10G/10G.iso</span> <button
+            onclick="CopyToClipboard()">copier</button>
+    </p>
+    <p><span style="color: #0000ff;">./nspeed.exe -cpu get -n 4 http://bouygues.testdebit.info/10G/10G.iso</span>
+        <button onclick="CopyToClipboard()">copier</button>
+    </p>
+</body>
+
+</html>
