@@ -21,7 +21,8 @@ languages:
     weight: 2
 
 title: NSpeed
-theme: hermit
+  #theme: hermit
+theme: blowfish
 disableKinds: 
   - taxonomy
   - term
