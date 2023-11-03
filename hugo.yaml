@@ -21,7 +21,7 @@ languages:
     weight: 2
 
 title: NSpeed
-theme: hermit
+theme: hermit-v2
 disableKinds: 
   - taxonomy
   - term
@@ -52,17 +52,23 @@ params:
   dateformShort: Jan 2
   dateformNum: '2006-01-02'
   dateformNumTime: '2006-01-02 15:04 -0700'
-  themeColor: '#1a2dd9'
+  themeColor: '#2596be'
   homeSubtitle: A high performance multi-threaded network bandwidth measurement tool.
   footerCopyright: ' &#183; <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>'
   justifyContent: false
   relatedPosts: false
   code_copy_button: true
-  social:
-    - name: email
+  socialLinks:
+    - name: "email"
       url: 'mailto:info@nspeed.app'
-    - name: github
+    - name: "x"
+      url: https://twitter.com/jfgiorgi
+    - name: "github"
       url: 'https://github.com/nspeed-app/nspeed'
+    - name: "bsky"
+      url: https://bsky.app/profile/nspeed.app
+  homeSubtitlePrinter: false
+
 menu:
   main:
     - name: Download
