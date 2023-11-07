@@ -10,6 +10,7 @@ languages:
       subtitle: Reference, Tutorials, and Explanations
     title: NSpeed
     weight: 1
+
   fr:
     disabled: false
     languageCode: fr-FR
@@ -21,10 +22,9 @@ languages:
     weight: 2
 
 title: NSpeed
-theme: hermit-v2
-disableKinds: 
-  - taxonomy
-  - term
+theme: 
+  - hugo-shortcode-roneo-collection
+  - hermit-v2
 pygmentsCodefences: true
 pygmentsUseClasses: true
 rssLimit: 10
@@ -39,9 +39,15 @@ staticDir:
 - tuto
 
 author:
-    name: Jean-Francois Giorgi
+  name: Jean-Francois Giorgi
 
 params:
+
+  disableKinds: 
+    - RSS
+    - taxonomy
+    - term
+
   author:
     name: Jean-Francois Giorgi
   # +go-import 
@@ -54,7 +60,7 @@ params:
   dateformNumTime: '2006-01-02 15:04 -0700'
   themeColor: '#2596be'
   homeSubtitle: A high performance multi-threaded network bandwidth measurement tool.
-  footerCopyright: ' &#183; <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>'
+  footerCopyright: ' <a href="https://creativecommons.org/licenses/by-nc/4.0/" target="_blank" rel="noopener">CC BY-NC 4.0</a>'
   justifyContent: false
   relatedPosts: false
   code_copy_button: true
@@ -74,6 +80,9 @@ menu:
     - name: Download
       url: https://github.com/nspeed-app/nspeed/releases/
       weight: 10
+    - name: Changelog
+      url: posts/changelog/
+      weigth: 20
     - name: About
       url: about-nspeed/
-      weight: 20
+      weight: 30
