@@ -75,6 +75,12 @@ params:
       url: https://bsky.app/profile/nspeed.app
   homeSubtitlePrinter: false
 
+minify:
+  tdewolff:
+    html:
+      keepQuotes: true
+
+
 menu:
   main:
     - name: Download
