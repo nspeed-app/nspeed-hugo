@@ -2,6 +2,7 @@
 <html lang="en-us">
 
 <head>
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css">
     <script>
         function CopyToClipboard() {
             var elem = event.target.previousElementSibling;
@@ -15,41 +16,43 @@
 
         }
     </script>
+    <style>
+        :root {
+            color-scheme: light;
+        }
+
+        body {
+            /*                    80% here is our page width... */
+            grid-template-columns: 0fr 80% 0fr;
+            place-content: center;
+        }
+    </style>    
 </head>
 
 <body>
-    <h2>TEST DEBIT POUR WINDOWS</h2>
-    <h3><strong>Lancer 'powershell'</strong></h3>
-    <p>il y a plusieurs m&eacute;thodes dont:</p>
+    <h3>TEST DEBIT POUR WINDOWS</h3>
+    <h4><strong>Lancer 'powershell'</strong></h4>
+    <span>il y a plusieurs m&eacute;thodes dont:
     <ul>
         <li>en cliquant sur la loupe (recherche) en bas de la barre Windows et saisir 'powershell'</li>
         <li>en appuyant sur la touche ⊞ (touche Windows ) et la touche X en meme temps et choisir 'powershell' dans le
             menu qui apparait.</li>
     </ul>
-    <p>Dans la fen&ecirc;tre qui apparait (fond bleu en g&eacute;n&eacute;ral) ,saisir ou copier/coller les commandes
-        suivantes:</p>
-    <p><span style="color: #0000ff;">Get-NetAdapter</span>
-        <button onclick="CopyToClipboard()">copier</button>
-    </p>
-    <p><span style="color: #0000ff;">Get-NetAdapterHardwareInfo</span>
-        <button onclick="CopyToClipboard()">copier</button>
-    </p>
-    <p>et poster leurs r&eacute;sultats.</p>
-    <h3><strong>Ensuite faire un test avec NSpeed</strong>:</h3>
-    <p>Dans la meme fen&ecirc;tre:</p>
-    <p><span style="color: #0000ff;">wget -outfile nspeed.exe
-            https://dl.nspeed.app/nspeed-client/latest/nspeed_windows_amd64.exe </span> <button
-            onclick="CopyToClipboard()">copier</button>
-    </p>
-    <p>cela va t&eacute;l&eacute;charger le programme nspeed qui permet de faire des mesures de d&eacute;bit en ligne de
-        commande.</p>
-    <p>Puis nous donner les r&eacute;sultats de:</p>
-    <p><span style="color: #0000ff;">./nspeed.exe -cpu get http://bouygues.testdebit.info/10G/10G.iso</span> <button
-            onclick="CopyToClipboard()">copier</button>
-    </p>
-    <p><span style="color: #0000ff;">./nspeed.exe -cpu get -n 4 http://bouygues.testdebit.info/10G/10G.iso</span>
-        <button onclick="CopyToClipboard()">copier</button>
-    </p>
+    Dans la fen&ecirc;tre qui apparait (fond bleu en g&eacute;n&eacute;ral) ,saisir ou copier/coller les commandes
+        suivantes:
+    <pre>Get-NetAdapter
+Get-NetAdapterHardwareInfo</pre><button onclick="CopyToClipboard()">copier</button><br>
+    et poster leurs r&eacute;sultats.</span>
+    <h4><strong>Ensuite faire un test avec NSpeed</strong>:</h4>
+    <span>Dans la meme fen&ecirc;tre:
+    <pre>wget -outfile nspeed.exe https://dl.nspeed.app/nspeed-client/latest/nspeed_windows_amd64.exe</pre> <button
+    onclick="CopyToClipboard()">copier</button><br>
+    Cela va t&eacute;l&eacute;charger le programme nspeed qui permet de faire des mesures de d&eacute;bit en ligne de
+     commande.</span>
+
+    <span>Puis nous donner les r&eacute;sultats de:
+    <pre>./nspeed.exe -cpu from https://dl.nspeed.app/aw</pre><button onclick="CopyToClipboard()">copier</button>
+    </span>
 </body>
 
 </html>
