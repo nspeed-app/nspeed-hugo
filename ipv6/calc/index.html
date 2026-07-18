@@ -92,6 +92,15 @@
   .btn:disabled{ opacity:.35; cursor:not-allowed; }
   .btn:disabled:hover{ border-color:var(--border); color:var(--text); }
 
+  .iconBtn{
+    flex:0 0 auto; width:26px; height:26px;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--border); background:var(--panel-2); color:var(--text-dim);
+    border-radius:6px; font-size:14px; line-height:1; cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  .iconBtn:hover{ border-color:var(--cyan); color:var(--cyan); }
+
   .errMsg{ font-family:var(--mono); font-size:12.5px; color:var(--red); margin:10px 2px 0; min-height:1em; }
   .noteMsg{ font-family:var(--mono); font-size:12px; color:var(--amber); margin:10px 2px 0; }
 
@@ -105,12 +114,27 @@
   .stat .k{ color:var(--text-faint); font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; display:block; margin-bottom:3px; }
   .stat .v{ color:var(--text); font-size:14px; }
 
-  .ruler{ display:flex; gap:3px; margin-bottom:8px; }
+  .ruler{ display:flex; gap:3px; margin-bottom:8px; position:relative; }
   .ruler .grp{ display:flex; gap:1px; flex:1; }
   .ruler .bit{ flex:1; height:26px; border-radius:1px; background:var(--amber-soft); }
   .ruler .bit.net{ background:var(--cyan); }
   .ruler .bit.host{ background:var(--violet); }
   .ruler .bit.edge{ box-shadow:0 0 0 1px rgba(255,255,255,0.35) inset; }
+  .ruler .bit.subnetZone{ cursor:pointer; }
+  .ruler .bit.subnetZone:hover{ background:var(--amber); }
+  .ruler .bit.boundary{ cursor:ew-resize; touch-action:none; }
+
+  .rulerHandle{
+    position:absolute; top:-4px; bottom:-4px; width:14px; margin-left:-7px;
+    z-index:5; pointer-events:none;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .rulerHandle::before{
+    content:''; position:absolute; top:0; bottom:0; left:50%; width:3px; margin-left:-1.5px;
+    background:var(--cyan); border-radius:2px; opacity:.55;
+    transition:opacity .15s;
+  }
+  .rulerHandle.dragging::before{ opacity:1; }
   .ruler-labels{ display:flex; gap:3px; }
   .ruler-labels .grp{ flex:1; text-align:center; font-family:var(--mono); font-size:10px; color:var(--text-faint); }
   .legend{ display:flex; gap:18px; margin-top:14px; flex-wrap:wrap; }
@@ -123,6 +147,7 @@
   .table-card{ margin-top:20px; background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
   .table-head{ display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-soft); }
   .table-head h2{ font-size:14px; margin:0; font-weight:600; }
+  .table-head-right{ display:flex; align-items:center; gap:12px; }
   .table-head .count{ font-family:var(--mono); font-size:12px; color:var(--text-dim); }
 
   .row{ display:flex; align-items:center; gap:14px; padding:12px 20px; border-bottom:1px solid var(--border-soft); transition:background .12s; }
@@ -211,7 +236,6 @@
   <div class="inputRow">
     <input type="text" id="cidrInput" value="2001:db8::/32" spellcheck="false" autocomplete="off">
     <button class="btn primary" id="calcBtn">Calculate</button>
-    <button class="btn ghost" id="resetBtn">Reset tree</button>
     <button class="btn ghost" id="detectBtn" title="Detects your public IPv6 address via ipify.org and fills in its /64 network">Detect my network</button>
   </div>
   <div class="errMsg" id="errMsg"></div>
@@ -239,7 +263,11 @@
   <div class="table-card">
     <div class="table-head">
       <h2>Subnet tree</h2>
-      <div class="count" id="tableCount">0 leaves</div>
+      <div class="table-head-right">
+        <div class="count" id="tableCount">0 leaves</div>
+        <button class="btn ghost small" id="permalinkBtn" title="Copy a link that reproduces this exact network and subnet tree">Permalink</button>
+        <button class="btn ghost small" id="resetBtn">Reset tree</button>
+      </div>
     </div>
     <div id="rows"></div>
   </div>
@@ -369,6 +397,22 @@ function joinParent(node){
   node.parent.children = null;
 }
 
+function serializeTree(node){
+  if(!node.children) return '0';
+  return '1'+serializeTree(node.children[0])+serializeTree(node.children[1]);
+}
+
+function deserializeTree(node, bits, pos){
+  if(pos.i>=bits.length) return;
+  const c = bits[pos.i++];
+  if(c==='1'){
+    divideNode(node);
+    if(!node.children) return;
+    deserializeTree(node.children[0], bits, pos);
+    deserializeTree(node.children[1], bits, pos);
+  }
+}
+
 function recursiveDivideTo(node, target){
   if(node.prefixLen>=target) return;
   if(!node.children) divideNode(node);
@@ -447,10 +491,24 @@ function renderRuler(){
       const bitIndex = g*16+b;
       const bit = document.createElement('div');
       let cls = 'bit';
+      const inSubnetZone = bitIndex >= root.prefixLen && bitIndex < HOST_BOUNDARY;
       if(bitIndex < root.prefixLen) cls += ' net';
       else if(bitIndex < HOST_BOUNDARY) cls += ''; // subnet zone, default amber-soft bg
       else cls += ' host';
       if(bitIndex === root.prefixLen-1 || bitIndex === HOST_BOUNDARY-1) cls += ' edge';
+      const target = bitIndex+1;
+      if(inSubnetZone && target<=maxDivide){
+        cls += ' subnetZone';
+        bit.title = 'Click to split into /'+target;
+        bit.addEventListener('click', ()=>{
+          if(suppressNextBitClick){ suppressNextBitClick = false; return; }
+          showErr(''); jumpDivide(root, target);
+        });
+      }
+      if(bitIndex === root.prefixLen-1 || bitIndex === root.prefixLen){
+        cls += ' boundary';
+        bit.addEventListener('pointerdown', onBoundaryPointerDown);
+      }
       bit.className = cls;
       grp.appendChild(bit);
     }
@@ -459,6 +517,66 @@ function renderRuler(){
     lbl.className = 'grp';
     lbl.textContent = 'g'+g;
     labelsEl.appendChild(lbl);
+  }
+
+  const handle = document.createElement('div');
+  handle.className = 'rulerHandle' + (draggingBoundary ? ' dragging' : '');
+  handle.style.left = (root.prefixLen/128*100)+'%';
+  rulerEl.appendChild(handle);
+}
+
+let draggingBoundary = false;
+let boundaryDragStarted = false;
+let boundaryPointerDownX = 0;
+let suppressNextBitClick = false;
+const BOUNDARY_DRAG_THRESHOLD = 3;
+
+function onBoundaryPointerDown(e){
+  boundaryPointerDownX = e.clientX;
+  boundaryDragStarted = false;
+  window.addEventListener('pointermove', onBoundaryPointerMove);
+  window.addEventListener('pointerup', onBoundaryPointerUp);
+}
+
+function onBoundaryPointerMove(e){
+  if(!boundaryDragStarted){
+    if(Math.abs(e.clientX - boundaryPointerDownX) < BOUNDARY_DRAG_THRESHOLD) return;
+    boundaryDragStarted = true;
+    draggingBoundary = true;
+    document.body.style.cursor = 'ew-resize';
+    document.body.style.userSelect = 'none';
+  }
+  e.preventDefault();
+  updateBoundaryFromEvent(e);
+}
+
+function onBoundaryPointerUp(){
+  window.removeEventListener('pointermove', onBoundaryPointerMove);
+  window.removeEventListener('pointerup', onBoundaryPointerUp);
+  if(boundaryDragStarted){
+    draggingBoundary = false;
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+    suppressNextBitClick = true;
+    setTimeout(()=>{ suppressNextBitClick = false; }, 0);
+    render();
+  }
+  boundaryDragStarted = false;
+}
+
+function updateBoundaryFromEvent(e){
+  if(!root) return;
+  const rulerEl = document.getElementById('ruler');
+  const rect = rulerEl.getBoundingClientRect();
+  const frac = Math.min(1, Math.max(0, (e.clientX - rect.left) / rect.width));
+  const newPrefix = Math.min(HOST_BOUNDARY, Math.max(0, Math.round(frac*128)));
+  if(newPrefix !== root.prefixLen){
+    root.prefixLen = newPrefix;
+    root.base = networkAddress(root.base, newPrefix);
+    root.children = null;
+    maxDivide = Math.max(root.prefixLen, HOST_BOUNDARY);
+    document.getElementById('cidrInput').value = formatIPv6(root.base)+'/'+root.prefixLen;
+    render();
   }
 }
 
@@ -479,6 +597,19 @@ function render(){
   for(const {node, depth, guides} of leaves){
     const row = document.createElement('div');
     row.className = 'row';
+
+    const useBtn = document.createElement('button');
+    useBtn.className = 'iconBtn';
+    useBtn.textContent = '↳';
+    useBtn.title = 'Use as network — recalculate everything from this subnet';
+    useBtn.addEventListener('click', ()=>{
+      showErr('');
+      const cidr = formatIPv6(node.base)+'/'+node.prefixLen;
+      document.getElementById('cidrInput').value = cidr;
+      makeRoot(node.base, node.prefixLen);
+      render();
+    });
+    row.appendChild(useBtn);
 
     const guidesEl = document.createElement('div');
     guidesEl.className = 'guides';
@@ -523,7 +654,7 @@ function render(){
     const countCell = document.createElement('div');
     countCell.className = 'cell countCell';
     const num64 = node.prefixLen<HOST_BOUNDARY ? fmtBig(1n<<BigInt(HOST_BOUNDARY-node.prefixLen))+' × /64' : '1 × /64';
-    countCell.innerHTML = num64 + '<span class="lbl">'+ (node.prefixLen<HOST_BOUNDARY ? 'contains' : 'this subnet') +'</span>';
+    countCell.innerHTML = num64; // + '<span class="lbl">'+ (node.prefixLen<HOST_BOUNDARY ? 'contains' : 'this subnet') +'</span>';
     main.appendChild(countCell);
 
     row.appendChild(main);
@@ -595,6 +726,22 @@ document.getElementById('resetBtn').addEventListener('click', ()=>{
   render();
 });
 
+document.getElementById('permalinkBtn').addEventListener('click', ()=>{
+  if(!root) return;
+  const params = new URLSearchParams();
+  params.set('net', formatIPv6(root.base)+'/'+root.prefixLen);
+  const treeStr = serializeTree(root);
+  if(treeStr !== '0') params.set('tree', treeStr);
+  const url = location.origin+location.pathname+'?'+params.toString();
+  const btn = document.getElementById('permalinkBtn');
+  const original = btn.textContent;
+  copyText(url).then(()=>{
+    btn.textContent = 'Copied!';
+    clearTimeout(btn._copyTimer);
+    btn._copyTimer = setTimeout(()=>{ btn.textContent = original; }, 1200);
+  }).catch(()=>{ showErr('Could not copy permalink'); });
+});
+
 document.getElementById('cidrInput').addEventListener('keydown', (e)=>{
   if(e.key==='Enter') document.getElementById('calcBtn').click();
 });
@@ -656,7 +803,18 @@ document.getElementById('detectBtn').addEventListener('click', async ()=>{
   }
 });
 
-document.getElementById('calcBtn').click();
+(function initFromURL(){
+  const params = new URLSearchParams(location.search);
+  const netParam = params.get('net');
+  if(netParam) document.getElementById('cidrInput').value = netParam;
+
+  document.getElementById('calcBtn').click();
+
+  const treeParam = params.get('tree');
+  if(root && treeParam && /^[01]+$/.test(treeParam)){
+    try{ deserializeTree(root, treeParam, {i:0}); render(); }catch(e){}
+  }
+})();
 </script>
 </body>
 </html>
