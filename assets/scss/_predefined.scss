@@ -1,4 +1,5 @@
 // Colors
+// Matches the palette used by the IPv6 tools (ipv6/calc, ipv6/map)
 //
 $theme: #2596be;
 $text: #e9f2e8;
@@ -9,9 +10,10 @@ $midnightblue: #2c3e50;
 $typewriter: hsl(172, 100%, 36%);
 
 // Fonts
+// Matches the fonts used by the IPv6 tools (ipv6/calc, ipv6/map)
 //
-$fonts: "Trebuchet MS", Verdana, "Verdana Ref", "Segoe UI", Candara, "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;
-$code-fonts: Consolas, "Andale Mono WT", "Andale Mono", Menlo, Monaco, "Lucida Console", "Lucida Sans Typewriter", "DejaVu Sans Mono", "Bitstream Vera Sans Mono", "Liberation Mono", "Nimbus Mono L", "Courier New", Courier, "YaHei Consolas Hybrid", monospace, "Segoe UI Emoji", "PingFang SC", "Microsoft YaHei";
+$fonts: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+$code-fonts: 'JetBrains Mono', ui-monospace, 'SF Mono', Consolas, Menlo, Monaco, monospace;
 
 //Admonition
 //

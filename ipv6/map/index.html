@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPv6 Address Space Map</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D12; --panel:#0E131C; --panel-2:#131A26; --border:#212A3A; --border-soft:#171E2B;
+    --text:#DCE3EC; --text-dim:#8892A6; --text-faint:#4C5568;
+    --cyan:#4FD1C5; --violet:#9C8CE0; --amber:#E3A64D; --red:#E36B6B;
+    --c-reserved:#20283A; --c-reserved-tx:#5C6980;
+    --c-global:#3FBFB1;
+    --c-unique:#B98CE0;
+    --c-link:#E08BC0;
+    --c-multicast:#E0616B;
+    --c-apnic:#3FBFB1; --c-arin:#5C9DE8; --c-ripe:#E8A75C; --c-lacnic:#6FCB8E; --c-afrinic:#E88BC0;
+    --c-iana:#9C8CE0; --c-sixtofour:#C9B24E; --c-documentation:#E3A64D; --c-unallocated:#171D29;
+    --mono:'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+    --sans:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(ellipse 1100px 500px at 10% -10%, rgba(79,209,197,0.06), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 100% 10%, rgba(156,140,224,0.05), transparent 60%),
+      var(--bg);
+    color:var(--text); font-family:var(--sans); padding:36px 24px 70px; min-height:100vh;
+  }
+  .wrap{ max-width:1180px; margin:0 auto; }
+
+  .eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--cyan);
+    display:flex; align-items:center; gap:10px; margin-bottom:10px; }
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--cyan); opacity:.6; }
+  h1{ font-size:32px; font-weight:700; letter-spacing:-.01em; margin:0 0 8px; }
+  .sub{ color:var(--text-dim); font-size:14.5px; max-width:70ch; line-height:1.55; margin:0; }
+
+  .introRow{ display:flex; align-items:flex-start; justify-content:space-between; gap:24px; margin-bottom:22px; }
+  .introText{ flex:1 1 420px; min-width:0; }
+  .searchForm{ display:flex; gap:8px; flex-shrink:0; }
+  .searchForm input{ background:var(--panel); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:12.5px; padding:8px 12px; border-radius:7px; width:220px; outline:none; }
+  .searchForm input:focus{ border-color:var(--cyan); }
+  .searchForm button{ font-family:var(--sans); font-weight:600; font-size:12.5px; background:var(--panel-2); border:1px solid var(--border); color:var(--text); padding:0 14px; border-radius:7px; cursor:pointer; white-space:nowrap; }
+  .searchForm button:hover{ border-color:var(--cyan); color:var(--cyan); }
+  .searchForm button.ghost{ background:transparent; }
+  .searchForm button:disabled{ opacity:.5; cursor:not-allowed; }
+
+  .breadcrumb{ display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim); margin-bottom:10px; }
+  .breadcrumb .crumb{ cursor:pointer; }
+  .breadcrumb .crumb:hover{ color:var(--cyan); }
+  .breadcrumb .crumb.current{ color:var(--text); cursor:default; }
+  .breadcrumb .sep{ color:var(--text-faint); }
+
+  .map-card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; }
+  svg{ width:100%; height:auto; display:block; border-radius:6px; }
+  .tile{ cursor:default; transition:opacity .12s; }
+  .tile.drillable{ cursor:pointer; }
+  .tile:hover{ opacity:.86; }
+  .tile-label{ font-family:var(--mono); pointer-events:none; fill:#0A0D12; font-weight:600; }
+  .tile-sub{ font-family:var(--mono); pointer-events:none; fill:#0A0D12; opacity:.72; }
+  .tile.dim-fill .tile-label, .tile.dim-fill .tile-sub{ fill:var(--text-dim); }
+  .tile-pulse{ animation:pulse 1.1s ease-out 2; }
+  @keyframes pulse{ 0%{ stroke-width:2px; stroke:#fff; } 100%{ stroke-width:0px; } }
+  .tile.tile-selected rect{ stroke:#fff !important; stroke-width:2.5px !important; }
+
+  .legend{ display:flex; gap:14px; flex-wrap:wrap; margin-top:16px; }
+  .legend span{ font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .legend i{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+
+  .detail-card{ margin-top:16px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:20px 22px; min-height:108px; }
+  .detail-empty{ color:var(--text-faint); font-family:var(--mono); font-size:12.5px; }
+  .detail-top{ display:flex; justify-content:space-between; align-items:baseline; gap:14px; flex-wrap:wrap; margin-bottom:10px; }
+  .detail-prefix{ font-family:var(--mono); font-size:19px; font-weight:600; }
+  .detail-tag{ font-family:var(--mono); font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; padding:4px 9px; border-radius:5px; }
+  .detail-grid{ display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:10px; }
+  .detail-grid .k{ font-family:var(--mono); font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.07em; display:block; margin-bottom:4px; }
+  .detail-grid .v{ font-family:var(--mono); font-size:13px; color:var(--text); }
+  .detail-grid .v sup{ font-size:.72em; line-height:0; }
+  .detail-grid .v a{ color:var(--cyan); text-decoration:none; border-bottom:1px dotted var(--cyan); font-size:11.5px; margin-left:2px; }
+  .detail-grid .v a:hover{ border-bottom-style:solid; }
+  .detail-note{ font-size:13px; color:var(--text-dim); line-height:1.5; max-width:80ch; white-space:pre-line; }
+  .detail-special{ margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft); }
+  .detail-special .k{ font-family:var(--mono); font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.07em; display:block; margin-bottom:8px; }
+  .detail-special ul{ list-style:none; margin:0; padding:0; display:flex; flex-direction:column; gap:6px; }
+  .detail-special li{ font-size:12.5px; display:flex; flex-wrap:wrap; gap:8px; align-items:baseline; }
+  .detail-special .sp-prefix{ font-family:var(--mono); color:var(--cyan); font-weight:600; }
+  .detail-special .sp-name{ color:var(--text-dim); }
+  .detail-special .sp-rfc{ font-family:var(--mono); font-size:11px; color:var(--text-faint); }
+
+  footer{ margin-top:28px; text-align:center; font-family:var(--mono); font-size:11px; color:var(--text-faint); }
+  footer a{ color:var(--text-faint); }
+
+  @media (max-width:640px){
+    .introRow{ flex-direction:column; align-items:stretch; }
+    .introText{ flex-basis:auto; }
+    .searchForm{ width:100%; }
+    .searchForm input{ flex:1; width:auto; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="introRow">
+    <div class="introText">
+      <div class="eyebrow">IANA IPv6 Address Space, Global Unicast Assignments &amp; Special-Purpose Registries</div>
+      <p class="sub">A treemap of the entire 128-bit address space.
+         <!-- sized by how many addresses each block actually holds. Click <b style="color:var(--cyan)">Global Unicast</b> to drill into the routable internet and see how it's split across the five Regional Internet Registries. -->
+        </p>
+    </div>
+    <form class="searchForm" id="searchForm">
+      <input type="text" id="searchInput" placeholder="Locate an address, e.g. 2606:4700::1" spellcheck="false" autocomplete="off">
+      <button type="submit">Locate</button>
+      <button type="button" class="ghost" id="locateMeBtn" title="Detects your public IPv6 address via ipify.org and locates it">Locate me</button>
+    </form>
+  </div>
+
+  <div class="breadcrumb" id="breadcrumb"></div>
+
+  <div class="map-card">
+    <svg id="mapSvg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <div class="detail-card" id="detailCard">
+    <div class="detail-empty">Click or tap a block to see its details.</div>
+  </div>
+
+  <footer><span id="footerStatus">Loading snapshot…</span> · IANA IPv6 Address Space, IPv6 Global Unicast Address Assignments &amp; IPv6 Special-Purpose Address registries · area is proportional to address count, not screen space per block</footer>
+</div>
+
+<script src="ipv6-data.js"></script>
+<script>
+/* ---------------- ipv6 helpers ---------------- */
+const FULL_MASK = (1n<<128n)-1n;
+function sizeOf(p){ return 1n << BigInt(128-p); }
+function networkAddress(addr,p){
+  if(p<=0) return 0n;
+  if(p>=128) return addr & FULL_MASK;
+  const hostBits = BigInt(128-p);
+  return addr & (FULL_MASK ^ ((1n<<hostBits)-1n));
+}
+function parseIPv6(str){
+  str = str.trim();
+  if(str==='') throw new Error('empty address');
+  if((str.match(/::/g)||[]).length>1) throw new Error('address may only contain one "::"');
+  let groups;
+  if(str.includes('::')){
+    const [l,r] = str.split('::');
+    const left = l ? l.split(':') : [];
+    const right = r ? r.split(':') : [];
+    const missing = 8-left.length-right.length;
+    if(missing<0) throw new Error('too many groups');
+    groups = [...left, ...Array(missing).fill('0'), ...right];
+  } else groups = str.split(':');
+  if(groups.length!==8) throw new Error('expected 8 groups, got '+groups.length);
+  let addr=0n;
+  for(const g of groups){
+    if(g==='' || !/^[0-9a-fA-F]{1,4}$/.test(g)) throw new Error('invalid group "'+g+'"');
+    addr = (addr<<16n) | BigInt(parseInt(g,16));
+  }
+  return addr;
+}
+function parseCIDR(str){
+  const parts = str.trim().split('/');
+  const addr = parseIPv6(parts[0]);
+  const p = parts.length>1 ? parseInt(parts[1],10) : 128;
+  if(!Number.isInteger(p) || p<0 || p>128) throw new Error('bad prefix length');
+  return {addr, prefixLen:p};
+}
+function toHextets(addr){ const hex=addr.toString(16).padStart(32,'0'); const g=[]; for(let i=0;i<8;i++) g.push(hex.slice(i*4,i*4+4)); return g; }
+function formatIPv6(addr){
+  const values = toHextets(addr).map(g=>parseInt(g,16));
+  let bestStart=-1,bestLen=0,curStart=-1,curLen=0;
+  for(let i=0;i<8;i++){
+    if(values[i]===0){ if(curStart===-1) curStart=i; curLen++; if(curLen>bestLen){bestLen=curLen;bestStart=curStart;} }
+    else { curStart=-1; curLen=0; }
+  }
+  const hex = values.map(v=>v.toString(16));
+  if(bestLen>=2){
+    const left = hex.slice(0,bestStart).join(':');
+    const right = hex.slice(bestStart+bestLen).join(':');
+    if(left===''&&right==='') return '::';
+    if(left==='') return '::'+right;
+    if(right==='') return left+'::';
+    return left+'::'+right;
+  }
+  return hex.join(':');
+}
+function fmtBig(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+function fmtAddrCount(n){
+  const asNum = Number(n);
+  if(asNum < 1e15) return fmtBig(n)+' addresses';
+  const [mantissa, exponent] = asNum.toExponential(2).split('e+');
+  return '≈'+mantissa+' × 10'+sup(exponent)+' addresses';
+}
+function sup(n){ return '<sup>'+n+'</sup>'; }
+function fmtPct(frac){
+  if(frac*100>=0.01) return (frac*100).toFixed(frac<0.1?4:2)+'%';
+  return (frac*100).toExponential(2)+'%';
+}
+
+/* ---------------- classification ---------------- */
+function classifyTop(allocation){
+  const a = allocation.toLowerCase();
+  if(a.includes('global unicast')) return {category:'global', drill:true};
+  if(a.includes('unique local')) return {category:'unique'};
+  if(a.includes('link-scoped') || a.includes('link-local')) return {category:'link'};
+  if(a.includes('multicast')) return {category:'multicast'};
+  return {category:'reserved'};
+}
+function classifyUnicast(designation, status){
+  if(status==='RESERVED'){
+    if(designation==='Documentation') return {category:'documentation'};
+    return {category:'reserved'};
+  }
+  switch(designation){
+    case 'APNIC': return {category:'apnic'};
+    case 'ARIN': return {category:'arin'};
+    case 'RIPE NCC': return {category:'ripe'};
+    case 'LACNIC': return {category:'lacnic'};
+    case 'AFRINIC': return {category:'afrinic'};
+    case '6to4': return {category:'sixtofour'};
+    case 'Documentation': return {category:'documentation'};
+    case 'IANA': return {category:'iana'};
+    default: return {category:'reserved'};
+  }
+}
+
+const CATEGORY_META = {
+  reserved:      {label:'Reserved by IETF', color:'var(--c-reserved)', textDim:true},
+  global:        {label:'Global Unicast',   color:'var(--c-global)'},
+  unique:        {label:'Unique Local',     color:'var(--c-unique)'},
+  link:          {label:'Link-Scoped',      color:'var(--c-link)'},
+  multicast:     {label:'Multicast',        color:'var(--c-multicast)'},
+  apnic:         {label:'APNIC',            color:'var(--c-apnic)'},
+  arin:          {label:'ARIN',             color:'var(--c-arin)'},
+  ripe:          {label:'RIPE NCC',         color:'var(--c-ripe)'},
+  lacnic:        {label:'LACNIC',           color:'var(--c-lacnic)'},
+  afrinic:       {label:'AFRINIC',          color:'var(--c-afrinic)'},
+  iana:          {label:'IANA-held',        color:'var(--c-iana)'},
+  sixtofour:     {label:'6to4 (historic)',  color:'var(--c-sixtofour)'},
+  documentation: {label:'Documentation',    color:'var(--c-documentation)'},
+  unallocated:   {label:'Unallocated',      color:'var(--c-unallocated)', textDim:true}
+};
+
+/* ---------------- resolve + gap fill ---------------- */
+function resolveTop(raw){
+  return raw.map(e=>{
+    const {addr,prefixLen} = parseCIDR(e.prefix);
+    const base = networkAddress(addr,prefixLen);
+    const cls = classifyTop(e.allocation);
+    return {kind:'top', prefix:e.prefix, base, prefixLen, size:sizeOf(prefixLen), allocation:e.allocation, note:e.note, ...cls};
+  });
+}
+function resolveUnicast(raw){
+  return raw.map(e=>{
+    const {addr,prefixLen} = parseCIDR(e.prefix);
+    const base = networkAddress(addr,prefixLen);
+    const cls = classifyUnicast(e.designation, e.status);
+    return {kind:'unicast', prefix:e.prefix, base, prefixLen, size:sizeOf(prefixLen), designation:e.designation, date:e.date, status:e.status, note:e.note, ...cls};
+  });
+}
+/* per-RIR public record lookup — friendly web UI where one exists, that RIR's RDAP endpoint otherwise */
+const RIR_LINKS = {
+  ARIN:      (base,len)=> `https://search.arin.net/rdap/?query=${encodeURIComponent(formatIPv6(base)+'/'+len)}`,
+  'RIPE NCC':(base,len)=> `https://apps.db.ripe.net/db-web-ui/query?searchtext=${encodeURIComponent(formatIPv6(base)+'/'+len)}`,
+  APNIC:     (base,len)=> `https://rdap.apnic.net/ip/${formatIPv6(base)}/${len}`,
+  LACNIC:    (base,len)=> `https://rdap.lacnic.net/rdap/ip/${formatIPv6(base)}/${len}`,
+  AFRINIC:   (base,len)=> `https://rdap.afrinic.net/rdap/ip/${formatIPv6(base)}/${len}`
+};
+
+function resolveSpecial(raw){
+  return raw.map(e=>{
+    const {addr,prefixLen} = parseCIDR(e.prefix);
+    const base = networkAddress(addr,prefixLen);
+    return {kind:'special', prefix:e.prefix, base, prefixLen, size:sizeOf(prefixLen), name:e.name, rfc:e.rfc, date:e.date, term:e.term};
+  });
+}
+function gapFill(parentBase, parentPrefixLen, children){
+  const parentSize = sizeOf(parentPrefixLen);
+  const parentEnd = parentBase + parentSize;
+  const sorted = children.slice().sort((a,b)=> a.base<b.base?-1:(a.base>b.base?1:0));
+  const out = [];
+  let cursor = parentBase;
+  for(const c of sorted){
+    if(c.base>cursor) out.push({kind:'gap', base:cursor, size:c.base-cursor, category:'unallocated', allocation:'Unallocated', note:'Not yet listed in this IANA registry as an allocation.'});
+    out.push(c);
+    const cEnd = c.base+c.size;
+    if(cEnd>cursor) cursor=cEnd;
+  }
+  if(cursor<parentEnd) out.push({kind:'gap', base:cursor, size:parentEnd-cursor, category:'unallocated', allocation:'Unallocated', note:'Not yet listed in this IANA registry as an allocation.'});
+  return out;
+}
+
+let topResolved = gapFill(0n,0,resolveTop(TOP_RAW));
+let unicastParent = parseCIDR('2000::/3');
+let unicastResolved = gapFill(networkAddress(unicastParent.addr,3), 3, resolveUnicast(UNICAST_RAW));
+let specialResolved = resolveSpecial(SPECIAL_RAW).sort((a,b)=> a.base<b.base?-1:(a.base>b.base?1:0));
+
+/* special-purpose entries don't tile the space — they nest inside top/unicast blocks, so
+   look up whichever ones fall entirely within the currently selected tile's range */
+function findSpecialWithin(base, size){
+  const end = base+size;
+  return specialResolved.filter(s => s.base>=base && (s.base+s.size)<=end);
+}
+
+/* ---------------- squarified treemap ---------------- */
+function squarify(items, x0,y0,x1,y1){
+  const total = items.reduce((s,i)=>s+i.value,0);
+  if(total<=0) return [];
+  const area = (x1-x0)*(y1-y0);
+  let rest = items.slice().sort((a,b)=>b.value-a.value).map(i=>({...i, area: i.value/total*area}));
+  const result = [];
+  let rectX=x0, rectY=y0, rectW=x1-x0, rectH=y1-y0;
+  let row = [];
+
+  function worst(r, length){
+    if(r.length===0) return Infinity;
+    const sum = r.reduce((s,x)=>s+x.area,0);
+    const mx = Math.max(...r.map(x=>x.area));
+    const mn = Math.min(...r.map(x=>x.area));
+    const s2=sum*sum, l2=length*length;
+    return Math.max((l2*mx)/s2, s2/(l2*mn));
+  }
+  function layoutRow(r, length){
+    const rowArea = r.reduce((s,x)=>s+x.area,0);
+    const thickness = length>0 ? rowArea/length : 0;
+    if(rectW>=rectH){
+      let cy=rectY;
+      for(const it of r){
+        const h = thickness>0 ? it.area/thickness : 0;
+        result.push({...it, x:rectX, y:cy, w:thickness, h});
+        cy+=h;
+      }
+      rectX+=thickness; rectW-=thickness;
+    } else {
+      let cx=rectX;
+      for(const it of r){
+        const w = thickness>0 ? it.area/thickness : 0;
+        result.push({...it, x:cx, y:rectY, w, h:thickness});
+        cx+=w;
+      }
+      rectY+=thickness; rectH-=thickness;
+    }
+  }
+
+  while(rest.length>0){
+    const length = Math.min(rectW, rectH);
+    const testRow = [...row, rest[0]];
+    if(row.length===0 || worst(row,length) >= worst(testRow,length)){
+      row = testRow; rest = rest.slice(1);
+    } else {
+      layoutRow(row, Math.min(rectW,rectH));
+      row = [];
+    }
+  }
+  if(row.length>0) layoutRow(row, Math.min(rectW,rectH));
+  return result;
+}
+
+/* ---------------- view state + render ---------------- */
+let currentView = 'root';   // 'root' | 'unicast'
+let pulseTarget = null;     // base BigInt of tile to pulse-highlight after a locate
+let selectedBase = null;    // base BigInt of the currently selected (clicked/tapped) tile
+
+const svg = document.getElementById('mapSvg');
+const legendEl = document.getElementById('legend');
+const breadcrumbEl = document.getElementById('breadcrumb');
+const detailEl = document.getElementById('detailCard');
+
+function currentList(){ return currentView==='root' ? topResolved : unicastResolved; }
+
+function renderBreadcrumb(){
+  breadcrumbEl.innerHTML = '';
+  const root = document.createElement('span');
+  root.className = 'crumb' + (currentView==='root' ? ' current' : '');
+  root.textContent = 'Whole IPv6 address space (::/0)';
+  root.addEventListener('click', ()=>{ if(currentView!=='root'){ currentView='root'; selectedBase=null; renderAll(); } });
+  breadcrumbEl.appendChild(root);
+  if(currentView==='unicast'){
+    const sep = document.createElement('span'); sep.className='sep'; sep.textContent='›';
+    breadcrumbEl.appendChild(sep);
+    const node = document.createElement('span');
+    node.className = 'crumb current';
+    node.textContent = '2000::/3 — Global Unicast';
+    breadcrumbEl.appendChild(node);
+  }
+}
+
+function showDetail(entry, parentSize){
+  if(!entry){ detailEl.innerHTML = '<div class="detail-empty">Click or tap a block to see its details.</div>'; return; }
+  const meta = CATEGORY_META[entry.category];
+  const pctTotal = fmtPct(Number(entry.size)/Number(1n<<128n));
+  let pctParentHtml = '';
+  if(parentSize){
+    const pctParent = fmtPct(Number(entry.size)/Number(parentSize));
+    pctParentHtml = `<div><span class="k">Share of this view</span><span class="v">${pctParent}</span></div>`;
+  }
+  const prefixLabel = entry.prefix ? (entry.prefix) : (formatIPv6(entry.base)+' – '+formatIPv6(entry.base+entry.size-1n));
+  const hostBits = entry.prefixLen!==undefined ? (128-entry.prefixLen) : null;
+  const sizeLabel = hostBits!==null ? ('2'+sup(hostBits)+' addresses') : fmtAddrCount(entry.size);
+
+  let rows = '';
+  if(entry.kind==='top'){
+    rows = `<div><span class="k">Allocation</span><span class="v">${entry.allocation}</span></div>
+            <div><span class="k">Total addresses</span><span class="v">${sizeLabel}</span></div>
+            <div><span class="k">Share of IPv6 space</span><span class="v">${pctTotal}</span></div>`;
+  } else if(entry.kind==='unicast'){
+    const rirLink = RIR_LINKS[entry.designation];
+    const designationHtml = rirLink
+      ? `${entry.designation} <a href="${rirLink(entry.base, entry.prefixLen)}" target="_blank" rel="noopener noreferrer">look up ↗</a>`
+      : entry.designation;
+    rows = `<div><span class="k">Designation</span><span class="v">${designationHtml}</span></div>
+            <div><span class="k">Status</span><span class="v">${entry.status}</span></div>
+            <div><span class="k">Allocated</span><span class="v">${entry.date}</span></div>
+            <div><span class="k">Total addresses</span><span class="v">${sizeLabel}</span></div>
+            ${pctParentHtml}
+            <div><span class="k">Share of IPv6 space</span><span class="v">${pctTotal}</span></div>`;
+  } else {
+    rows = `<div><span class="k">Status</span><span class="v">Unallocated</span></div>
+            <div><span class="k">Total addresses</span><span class="v">${sizeLabel}</span></div>
+            ${pctParentHtml}
+            <div><span class="k">Share of IPv6 space</span><span class="v">${pctTotal}</span></div>`;
+  }
+
+  const specialMatches = findSpecialWithin(entry.base, entry.size);
+  const specialHtml = specialMatches.length ? `
+    <div class="detail-special">
+      <span class="k">Special-purpose registrations in this range (IANA)</span>
+      <ul>${specialMatches.map(s=>`<li><span class="sp-prefix">${s.prefix}</span><span class="sp-name">${s.name}</span><span class="sp-rfc">${s.rfc}</span></li>`).join('')}</ul>
+    </div>` : '';
+
+  detailEl.innerHTML = `
+    <div class="detail-top">
+      <div class="detail-prefix">${prefixLabel}</div>
+      <div class="detail-tag" style="background:${meta.color};color:#0A0D12">${meta.label}</div>
+    </div>
+    <div class="detail-grid">${rows}</div>
+    ${entry.note ? `<div class="detail-note">${entry.note}</div>` : ''}
+    ${specialHtml}
+  `;
+}
+
+function renderLegend(list){
+  const cats = [...new Set(list.map(e=>e.category))];
+  legendEl.innerHTML = cats.map(c=>{
+    const m = CATEGORY_META[c];
+    return `<span><i style="background:${m.color}"></i>${m.label}</span>`;
+  }).join('');
+}
+
+function renderAll(){
+  renderBreadcrumb();
+  const list = currentList();
+  const items = list.map(e=>({...e, value:Number(e.size)}));
+  const rects = squarify(items, 4, 4, 992, 592);
+
+  svg.innerHTML = '';
+  for(const r of rects){
+    const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+    const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+    rect.setAttribute('x', r.x.toFixed(2));
+    rect.setAttribute('y', r.y.toFixed(2));
+    rect.setAttribute('width', Math.max(r.w,0).toFixed(2));
+    rect.setAttribute('height', Math.max(r.h,0).toFixed(2));
+    const meta = CATEGORY_META[r.category];
+    rect.style.fill = meta.color;
+    rect.setAttribute('stroke', '#0A0D12');
+    rect.setAttribute('stroke-width', '1.5');
+    const cls = ['tile'];
+    if(r.drill && currentView==='root') cls.push('drillable');
+    if(meta.textDim) cls.push('dim-fill');
+    if(selectedBase!==null && r.base===selectedBase) cls.push('tile-selected');
+    g.setAttribute('class', cls.join(' '));
+    g.addEventListener('click', ()=>{
+      if(r.drill && currentView==='root'){ currentView='unicast'; selectedBase=null; renderAll(); }
+      else { selectedBase = r.base; renderAll(); }
+    });
+    g.appendChild(rect);
+
+    if(r.w>54 && r.h>20){
+      const label = document.createElementNS('http://www.w3.org/2000/svg','text');
+      label.setAttribute('x', (r.x+6).toFixed(2));
+      label.setAttribute('y', (r.y+16).toFixed(2));
+      label.setAttribute('font-size', Math.min(13, Math.max(9, r.h/5)).toFixed(1));
+      label.setAttribute('class','tile-label');
+      label.textContent = r.kind==='unicast' ? r.designation : (r.kind==='top' ? r.allocation : 'Unallocated');
+      g.appendChild(label);
+      if(r.h>36){
+        const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
+        sub.setAttribute('x', (r.x+6).toFixed(2));
+        sub.setAttribute('y', (r.y+30).toFixed(2));
+        sub.setAttribute('font-size', Math.min(11, Math.max(8, r.h/7)).toFixed(1));
+        sub.setAttribute('class','tile-sub');
+        sub.textContent = r.prefix ? r.prefix : (formatIPv6(r.base)+' …');
+        g.appendChild(sub);
+      }
+    }
+
+    if(pulseTarget!==null && r.base===pulseTarget){
+      rect.setAttribute('stroke','#ffffff');
+      rect.classList.add('tile-pulse');
+    }
+
+    svg.appendChild(g);
+  }
+  pulseTarget = null;
+
+  renderLegend(list);
+  const selEntry = selectedBase!==null ? rects.find(r=>r.base===selectedBase) : null;
+  showDetail(selEntry || null, currentView==='unicast' ? sizeOf(3) : null);
+}
+
+/* ---------------- locate ---------------- */
+function findContaining(list, addr){
+  return list.find(e => addr>=e.base && addr < e.base+e.size);
+}
+function locateAddr(addr){
+  const topHit = findContaining(topResolved, addr);
+  if(!topHit) return;
+  if(topHit.category==='global'){
+    const uHit = findContaining(unicastResolved, addr);
+    currentView = 'unicast';
+    pulseTarget = uHit ? uHit.base : null;
+    selectedBase = uHit ? uHit.base : null;
+    renderAll();
+  } else {
+    currentView = 'root';
+    pulseTarget = topHit.base;
+    selectedBase = topHit.base;
+    renderAll();
+  }
+}
+document.getElementById('searchForm').addEventListener('submit', (e)=>{
+  e.preventDefault();
+  const raw = document.getElementById('searchInput').value.trim();
+  if(!raw) return;
+  try{
+    let addr;
+    if(raw.includes('/')) addr = parseCIDR(raw).addr;
+    else addr = parseIPv6(raw);
+    locateAddr(addr);
+  } catch(err){
+    detailEl.innerHTML = '<div class="detail-empty" style="color:var(--red)">Could not parse that address: '+err.message+'</div>';
+  }
+});
+
+document.getElementById('locateMeBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('locateMeBtn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Detecting…';
+  try{
+    const res = await fetch('https://api64.ipify.org?format=json');
+    if(!res.ok) throw new Error('ipify request failed ('+res.status+')');
+    const data = await res.json();
+    const ip = data.ip;
+    if(!ip || !ip.includes(':')) throw new Error('your connection returned an IPv4 address ('+(ip||'unknown')+') — no IPv6 connectivity detected');
+    const addr = parseIPv6(ip);
+    document.getElementById('searchInput').value = ip;
+    locateAddr(addr);
+  } catch(err){
+    detailEl.innerHTML = '<div class="detail-empty" style="color:var(--red)">Detection failed: '+err.message+'</div>';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+
+/* ---------------- init ---------------- */
+document.getElementById('footerStatus').textContent =
+  'Snapshot · IANA data as of ' + LAST_UPDATED.top + ' / ' + LAST_UPDATED.unicast + ' / ' + LAST_UPDATED.special;
+renderAll();
+</script>
+</body>
+</html>

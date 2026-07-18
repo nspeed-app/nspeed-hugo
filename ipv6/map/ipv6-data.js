@@ -1,0 +1,115 @@
+/* IANA IPv6 registry data for ipv6-address-map.html
+ * Regenerate with: scripts/update-ipv6-data.sh
+ */
+
+/* IPv6 Address Space registry — Last Updated 2025-10-23 */
+const TOP_RAW = [
+  {prefix:"::/8", allocation:"Reserved by IETF", note:"This range has been partially allocated.\nSee [IPv6 Special-Purpose Address Space] for details.\n::/96, formerly defined as the \"IPv4-compatible IPv6 address\" prefix, was deprecated by [RFC4291]."},
+  {prefix:"100::/8", allocation:"Reserved by IETF", note:"This range has been partially allocated.\nSee [IPv6 Special-Purpose Address Space] for details."},
+  {prefix:"200::/7", allocation:"Reserved by IETF", note:"Deprecated as of December 2004 [RFC4048].\nFormerly an OSI NSAP-mapped prefix set [RFC4548]."},
+  {prefix:"400::/6", allocation:"Reserved by IETF", note:""},
+  {prefix:"800::/5", allocation:"Reserved by IETF", note:""},
+  {prefix:"1000::/4", allocation:"Reserved by IETF", note:""},
+  {prefix:"2000::/3", allocation:"Global Unicast", note:"The IPv6 Unicast space encompasses the entire IPv6 address range with the exception of ff00::/8, per [RFC4291].\nIANA unicast address assignments are currently limited to the IPv6 unicast address range of 2000::/3.\nIANA assignments from this block are registered in [IPv6 Global Unicast Address Space]."},
+  {prefix:"4000::/3", allocation:"Reserved by IETF", note:"This range has been partially allocated.\nSee [IPv6 Special-Purpose Address Space] for details.\n5f00::/8 (with 3ffe::/16, as noted at [IPv6 Global Unicast Address Space]) was used for the 6bone, but returned [RFC5156]."},
+  {prefix:"6000::/3", allocation:"Reserved by IETF", note:""},
+  {prefix:"8000::/3", allocation:"Reserved by IETF", note:""},
+  {prefix:"a000::/3", allocation:"Reserved by IETF", note:""},
+  {prefix:"c000::/3", allocation:"Reserved by IETF", note:""},
+  {prefix:"e000::/4", allocation:"Reserved by IETF", note:""},
+  {prefix:"f000::/5", allocation:"Reserved by IETF", note:""},
+  {prefix:"f800::/6", allocation:"Reserved by IETF", note:""},
+  {prefix:"fc00::/7", allocation:"Unique Local Unicast", note:"See [IPv6 Special-Purpose Address Space] for details."},
+  {prefix:"fe00::/9", allocation:"Reserved by IETF", note:""},
+  {prefix:"fe80::/10", allocation:"Link-Scoped Unicast", note:"See [IPv6 Special-Purpose Address Space] for details."},
+  {prefix:"fec0::/10", allocation:"Reserved by IETF", note:"Deprecated by [RFC3879] in September 2004.\nFormerly a Site-Local scoped address prefix."},
+  {prefix:"ff00::/8", allocation:"Multicast", note:"See [IPv6 Multicast Address Space] for details."}
+];
+
+/* IPv6 Global Unicast Address Assignments registry — Last Updated 2025-10-10 */
+const UNICAST_RAW = [
+  {prefix:"2001::/23", designation:"IANA", date:"1999-07-01", status:"ALLOCATED", note:"This range has been partially allocated.\nSee [IPv6 Special-Purpose Address Space] for details."},
+  {prefix:"2001:200::/23", designation:"APNIC", date:"1999-07-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:400::/23", designation:"ARIN", date:"1999-07-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:600::/23", designation:"RIPE NCC", date:"1999-07-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:800::/22", designation:"RIPE NCC", date:"2002-11-02", status:"ALLOCATED", note:"2001:800::/23 was allocated on 2002-05-02.\nThe more recent allocation (2002-11-02) incorporates the previous allocation."},
+  {prefix:"2001:c00::/23", designation:"APNIC", date:"2002-05-02", status:"ALLOCATED", note:"2001:db8::/32 is reserved for Documentation [RFC3849].\nSee [IPv6 Special-Purpose Address Space] for details."},
+  {prefix:"2001:e00::/23", designation:"APNIC", date:"2003-01-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:1200::/23", designation:"LACNIC", date:"2002-11-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:1400::/22", designation:"RIPE NCC", date:"2003-07-01", status:"ALLOCATED", note:"2001:1400::/23 was allocated on 2003-02-01.\nThe more recent allocation (2003-07-01) incorporates the previous allocation."},
+  {prefix:"2001:1800::/23", designation:"ARIN", date:"2003-04-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:1a00::/23", designation:"RIPE NCC", date:"2004-01-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:1c00::/22", designation:"RIPE NCC", date:"2004-05-04", status:"ALLOCATED", note:""},
+  {prefix:"2001:2000::/19", designation:"RIPE NCC", date:"2019-03-12", status:"ALLOCATED", note:"2001:2000::/20, 2001:3000::/21, and 2001:3800::/22 were allocated on 2004-05-04.\nThe more recent allocation (2019-03-12) incorporates all these previous allocations."},
+  {prefix:"2001:4000::/23", designation:"RIPE NCC", date:"2004-06-11", status:"ALLOCATED", note:""},
+  {prefix:"2001:4200::/23", designation:"AFRINIC", date:"2004-06-01", status:"ALLOCATED", note:""},
+  {prefix:"2001:4400::/23", designation:"APNIC", date:"2004-06-11", status:"ALLOCATED", note:""},
+  {prefix:"2001:4600::/23", designation:"RIPE NCC", date:"2004-08-17", status:"ALLOCATED", note:""},
+  {prefix:"2001:4800::/23", designation:"ARIN", date:"2004-08-24", status:"ALLOCATED", note:""},
+  {prefix:"2001:4a00::/23", designation:"RIPE NCC", date:"2004-10-15", status:"ALLOCATED", note:""},
+  {prefix:"2001:4c00::/23", designation:"RIPE NCC", date:"2004-12-17", status:"ALLOCATED", note:""},
+  {prefix:"2001:5000::/20", designation:"RIPE NCC", date:"2004-09-10", status:"ALLOCATED", note:""},
+  {prefix:"2001:8000::/19", designation:"APNIC", date:"2004-11-30", status:"ALLOCATED", note:""},
+  {prefix:"2001:a000::/20", designation:"APNIC", date:"2004-11-30", status:"ALLOCATED", note:""},
+  {prefix:"2001:b000::/20", designation:"APNIC", date:"2006-03-08", status:"ALLOCATED", note:""},
+  {prefix:"2002::/16", designation:"6to4", date:"2001-02-01", status:"ALLOCATED", note:"See [IPv6 Special-Purpose Address Space] for details."},
+  {prefix:"2003::/18", designation:"RIPE NCC", date:"2005-01-12", status:"ALLOCATED", note:""},
+  {prefix:"2400::/12", designation:"APNIC", date:"2006-10-03", status:"ALLOCATED", note:"2400::/19 was allocated on 2005-05-20.\n2400:2000::/19 was allocated on 2005-07-08.\n2400:4000::/21 was allocated on 2005-08-08.\n2404::/23 was allocated on 2006-01-19.\nThe more recent allocation (2006-10-03) incorporates all these previous allocations."},
+  {prefix:"2410::/12", designation:"APNIC", date:"2024-11-01", status:"ALLOCATED", note:""},
+  {prefix:"2600::/12", designation:"ARIN", date:"2006-10-03", status:"ALLOCATED", note:"2600::/22, 2604::/22, 2608::/22 and 260c::/22 were allocated on 2005-04-19.\nThe more recent allocation (2006-10-03) incorporates all these previous allocations."},
+  {prefix:"2610::/23", designation:"ARIN", date:"2005-11-17", status:"ALLOCATED", note:""},
+  {prefix:"2620::/23", designation:"ARIN", date:"2006-09-12", status:"ALLOCATED", note:""},
+  {prefix:"2630::/12", designation:"ARIN", date:"2019-11-06", status:"ALLOCATED", note:""},
+  {prefix:"2800::/12", designation:"LACNIC", date:"2006-10-03", status:"ALLOCATED", note:"2800::/23 was allocated on 2005-11-17.\nThe more recent allocation (2006-10-03) incorporates the previous allocation."},
+  {prefix:"2a00::/12", designation:"RIPE NCC", date:"2006-10-03", status:"ALLOCATED", note:"2a00::/21 was originally allocated on 2005-04-19.\n2a01::/23 was allocated on 2005-07-14.\n2a01::/16 (incorporating the 2a01::/23) was allocated on 2005-12-15.\nThe more recent allocation (2006-10-03) incorporates these previous allocations."},
+  {prefix:"2a10::/12", designation:"RIPE NCC", date:"2019-06-05", status:"ALLOCATED", note:""},
+  {prefix:"2c00::/12", designation:"AFRINIC", date:"2006-10-03", status:"ALLOCATED", note:""},
+  {prefix:"2d00::/8", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"2e00::/7", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3000::/5", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3800::/6", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3c00::/7", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3e00::/8", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3f00::/9", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3f80::/10", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3fc0::/11", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3fe0::/12", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3ff0::/13", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3ff8::/14", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3ffc::/15", designation:"IANA", date:"1999-07-01", status:"RESERVED", note:""},
+  {prefix:"3ffe::/16", designation:"IANA", date:"2008-04", status:"RESERVED", note:"3ffe:831f::/32 was used for Teredo in some old but widely distributed networking stacks.\nThis usage is deprecated in favor of 2001::/32, which was allocated for the purpose in [RFC4380].\n3ffe::/16 and 5f00::/8 were used for the 6bone, but returned [RFC5156]."},
+  {prefix:"3fff::/20", designation:"Documentation", date:"2024-07-23", status:"RESERVED", note:"See [IPv6 Special-Purpose Address Space] for details."}
+];
+
+/* IANA IPv6 Special-Purpose Address Registry — Last Updated 2025-10-09 */
+/* Sparse, nested annotations — not a partition of the space, so these are looked up */
+/* against whichever tile is selected rather than drawn as tiles of their own. */
+const SPECIAL_RAW = [
+  {prefix:"::1/128", name:"Loopback Address", rfc:"RFC4291", date:"2006-02", term:"N/A"},
+  {prefix:"::/128", name:"Unspecified Address", rfc:"RFC4291", date:"2006-02", term:"N/A"},
+  {prefix:"::ffff:0:0/96", name:"IPv4-mapped Address", rfc:"RFC4291", date:"2006-02", term:"N/A"},
+  {prefix:"64:ff9b::/96", name:"IPv4-IPv6 Translat.", rfc:"RFC6052", date:"2010-10", term:"N/A"},
+  {prefix:"64:ff9b:1::/48", name:"IPv4-IPv6 Translat.", rfc:"RFC8215", date:"2017-06", term:"N/A"},
+  {prefix:"100::/64", name:"Discard-Only Address Block", rfc:"RFC6666", date:"2012-06", term:"N/A"},
+  {prefix:"100:0:0:1::/64", name:"Dummy IPv6 Prefix", rfc:"RFC9780", date:"2025-04", term:"N/A"},
+  {prefix:"2001::/23", name:"IETF Protocol Assignments", rfc:"RFC2928", date:"2000-09", term:"N/A"},
+  {prefix:"2001::/32", name:"TEREDO", rfc:"RFC4380, RFC8190", date:"2006-01", term:"N/A"},
+  {prefix:"2001:1::1/128", name:"Port Control Protocol Anycast", rfc:"RFC7723", date:"2015-10", term:"N/A"},
+  {prefix:"2001:1::2/128", name:"Traversal Using Relays around NAT Anycast", rfc:"RFC8155", date:"2017-02", term:"N/A"},
+  {prefix:"2001:1::3/128", name:"DNS-SD Service Registration Protocol Anycast", rfc:"RFC9665", date:"2024-04", term:"N/A"},
+  {prefix:"2001:2::/48", name:"Benchmarking", rfc:"RFC5180, RFC Errata 1752", date:"2008-04", term:"N/A"},
+  {prefix:"2001:3::/32", name:"AMT", rfc:"RFC7450", date:"2014-12", term:"N/A"},
+  {prefix:"2001:4:112::/48", name:"AS112-v6", rfc:"RFC7535", date:"2014-12", term:"N/A"},
+  {prefix:"2001:10::/28", name:"Deprecated (previously ORCHID)", rfc:"RFC4843", date:"2007-03", term:"2014-03"},
+  {prefix:"2001:20::/28", name:"ORCHIDv2", rfc:"RFC7343", date:"2014-07", term:"N/A"},
+  {prefix:"2001:30::/28", name:"Drone Remote ID Protocol Entity Tags (DETs) Prefix", rfc:"RFC9374", date:"2022-12", term:"N/A"},
+  {prefix:"2001:db8::/32", name:"Documentation", rfc:"RFC3849", date:"2004-07", term:"N/A"},
+  {prefix:"2002::/16", name:"6to4", rfc:"RFC3056", date:"2001-02", term:"N/A"},
+  {prefix:"2620:4f:8000::/48", name:"Direct Delegation AS112 Service", rfc:"RFC7534", date:"2011-05", term:"N/A"},
+  {prefix:"3fff::/20", name:"Documentation", rfc:"RFC9637", date:"2024-07", term:"N/A"},
+  {prefix:"5f00::/16", name:"Segment Routing (SRv6) SIDs", rfc:"RFC9602", date:"2024-04", term:"N/A"},
+  {prefix:"fc00::/7", name:"Unique-Local", rfc:"RFC4193, RFC8190", date:"2005-10", term:"N/A"},
+  {prefix:"fe80::/10", name:"Link-Local Unicast", rfc:"RFC4291", date:"2006-02", term:"N/A"}
+];
+
+const LAST_UPDATED = { top:"2025-10-23", unicast:"2025-10-10", special:"2025-10-09" };
