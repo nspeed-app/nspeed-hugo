@@ -3,21 +3,21 @@ defaultContentLanguage: "en"
 languages:
   en:
     disabled: false
-    languageCode: en-US
-    languageDirection: ltr
-    languageName: English
+    locale: en-US
+    direction: ltr
+    label: English
     params:
-      subtitle: Reference, Tutorials, and Explanations
+      homeSubtitle: A high performance multi-threaded network bandwidth measurement tool.
     title: NSpeed
     weight: 1
 
   fr:
     disabled: false
-    languageCode: fr-FR
-    languageDirection: ltr
-    languageName: Français
+    locale: fr-FR
+    direction: ltr
+    label: Français
     params:
-      subtitle: Références, Tutoriels et Explications
+      homeSubtitle: Un outil de mesure de bande passante réseau multi-thread haute performance.
     title: NSpeed
     weight: 2
 
@@ -33,10 +33,25 @@ copyright: >-
   International License.
 enableEmoji: true
 
-staticDir:
-- assets
-- static
-- tuto
+module:
+  mounts:
+    - source: content
+      target: content
+    - source: layouts
+      target: layouts
+    - source: archetypes
+      target: archetypes
+    - source: assets
+      target: assets
+    - source: assets
+      target: static
+    - source: static
+      target: static
+    - source: tuto
+      target: static
+    - source: ipv6
+      target: static/ipv6
+      excludeFiles: "/map/scripts/**"
 
 author:
   name: Jean-Francois Giorgi

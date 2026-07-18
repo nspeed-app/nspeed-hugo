@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IPv6 Subnet Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0A0D12;
+    --panel:#0E131C;
+    --panel-2:#131A26;
+    --border:#212A3A;
+    --border-soft:#171E2B;
+    --text:#DCE3EC;
+    --text-dim:#8892A6;
+    --text-faint:#4C5568;
+    --cyan:#4FD1C5;
+    --cyan-soft:#1E4B48;
+    --amber:#E3A64D;
+    --amber-soft:#6B5024;
+    --amber-faint:#3A3120;
+    --violet:#9C8CE0;
+    --violet-soft:#332C55;
+    --red:#E36B6B;
+    --mono:'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+    --sans:'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background:
+      radial-gradient(ellipse 1100px 500px at 15% -10%, rgba(79,209,197,0.06), transparent 60%),
+      radial-gradient(ellipse 900px 500px at 100% 0%, rgba(156,140,224,0.05), transparent 60%),
+      var(--bg);
+    color:var(--text);
+    font-family:var(--sans);
+    padding:40px 24px 80px;
+    min-height:100vh;
+  }
+  .wrap{ max-width:1000px; margin:0 auto; }
+
+  .eyebrow{
+    font-family:var(--mono);
+    font-size:11px;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--cyan);
+    display:flex; align-items:center; gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{ content:''; width:22px; height:1px; background:var(--cyan); opacity:.6; }
+  .eyebrow a{ color:inherit; text-decoration:none; border-bottom:1px dotted var(--cyan); }
+  .eyebrow a:hover{ color:var(--text); }
+  h1{ font-size:34px; font-weight:700; letter-spacing:-.01em; margin:0 0 8px; }
+  .sub{ color:var(--text-dim); font-size:14.5px; max-width:66ch; line-height:1.55; margin:0 0 30px; }
+  .sub b{ color:var(--text); font-weight:600; }
+
+  .inputRow{ display:flex; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .inputRow input[type=text]{
+    flex:1 1 340px;
+    background:var(--panel);
+    border:1px solid var(--border);
+    color:var(--text);
+    font-family:var(--mono);
+    font-size:15px;
+    padding:13px 16px;
+    border-radius:8px;
+    outline:none;
+    transition:border-color .15s;
+  }
+  .inputRow input[type=text]:focus{ border-color:var(--cyan); }
+  .btn{
+    font-family:var(--sans);
+    font-weight:600;
+    font-size:13.5px;
+    border-radius:8px;
+    border:1px solid var(--border);
+    background:var(--panel-2);
+    color:var(--text);
+    padding:0 20px;
+    cursor:pointer;
+    transition:border-color .15s, color .15s, background .15s;
+  }
+  .btn:hover{ border-color:var(--cyan); color:var(--cyan); }
+  .btn.primary{ background:var(--cyan); border-color:var(--cyan); color:#06231F; }
+  .btn.primary:hover{ background:#65DDD1; color:#06231F; }
+  .btn.ghost{ background:transparent; }
+  .btn.small{ padding:6px 12px; font-size:12px; border-radius:6px; }
+  .btn:disabled{ opacity:.35; cursor:not-allowed; }
+  .btn:disabled:hover{ border-color:var(--border); color:var(--text); }
+
+  .errMsg{ font-family:var(--mono); font-size:12.5px; color:var(--red); margin:10px 2px 0; min-height:1em; }
+  .noteMsg{ font-family:var(--mono); font-size:12px; color:var(--amber); margin:10px 2px 0; }
+
+  .ruler-card{ margin-top:28px; background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:26px 26px 22px; }
+  .ruler-top{ display:flex; justify-content:space-between; align-items:baseline; gap:20px; flex-wrap:wrap; margin-bottom:18px; }
+  .ruler-net{ font-family:var(--mono); font-size:20px; font-weight:600; letter-spacing:-.01em; }
+  .ruler-net .slash{ color:var(--text-faint); }
+  .ruler-net .prefixnum{ color:var(--cyan); }
+  .ruler-stats{ display:flex; gap:22px; flex-wrap:wrap; }
+  .stat{ font-family:var(--mono); }
+  .stat .k{ color:var(--text-faint); font-size:10.5px; text-transform:uppercase; letter-spacing:.08em; display:block; margin-bottom:3px; }
+  .stat .v{ color:var(--text); font-size:14px; }
+
+  .ruler{ display:flex; gap:3px; margin-bottom:8px; }
+  .ruler .grp{ display:flex; gap:1px; flex:1; }
+  .ruler .bit{ flex:1; height:26px; border-radius:1px; background:var(--amber-soft); }
+  .ruler .bit.net{ background:var(--cyan); }
+  .ruler .bit.host{ background:var(--violet); }
+  .ruler .bit.edge{ box-shadow:0 0 0 1px rgba(255,255,255,0.35) inset; }
+  .ruler-labels{ display:flex; gap:3px; }
+  .ruler-labels .grp{ flex:1; text-align:center; font-family:var(--mono); font-size:10px; color:var(--text-faint); }
+  .legend{ display:flex; gap:18px; margin-top:14px; flex-wrap:wrap; }
+  .legend span{ font-family:var(--mono); font-size:11px; color:var(--text-dim); display:flex; align-items:center; gap:6px; }
+  .legend i{ width:10px; height:10px; border-radius:2px; display:inline-block; }
+  .legend i.net{ background:var(--cyan); }
+  .legend i.subnet{ background:var(--amber-soft); }
+  .legend i.host{ background:var(--violet); }
+
+  .table-card{ margin-top:20px; background:var(--panel); border:1px solid var(--border); border-radius:12px; overflow:hidden; }
+  .table-head{ display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid var(--border-soft); }
+  .table-head h2{ font-size:14px; margin:0; font-weight:600; }
+  .table-head .count{ font-family:var(--mono); font-size:12px; color:var(--text-dim); }
+
+  .row{ display:flex; align-items:center; gap:14px; padding:12px 20px; border-bottom:1px solid var(--border-soft); transition:background .12s; }
+  .row:last-child{ border-bottom:none; }
+  .row:hover{ background:var(--panel-2); }
+
+  .guides{ display:flex; align-self:stretch; flex:0 0 auto; }
+  .guide{ width:18px; flex:0 0 18px; position:relative; }
+  .guide.line::before{ content:''; position:absolute; left:8px; top:-12px; bottom:-12px; width:1px; background:var(--border); }
+
+  .rowMain{ flex:1 1 auto; min-width:0; display:grid; grid-template-columns:2fr 1.7fr 1.1fr; gap:16px; align-items:center; }
+  .netCell{ font-family:var(--mono); font-size:13.5px; }
+  .netCell .addr{ color:var(--text); cursor:pointer; }
+  .netCell .addr:hover{ color:var(--cyan); }
+  .netCell .addr.copied{ color:var(--amber); }
+  .netCell .pfx{ color:var(--cyan); }
+  .minibar{ display:flex; height:5px; border-radius:3px; overflow:hidden; margin-top:6px; width:150px; }
+  .minibar .net{ background:var(--cyan); height:100%; }
+  .minibar .subnetDone{ background:var(--amber); height:100%; }
+  .minibar .subnetOpen{ background:var(--amber-faint); height:100%; }
+  .minibar .host{ background:var(--violet); height:100%; }
+
+  .rangeCell{ font-family:var(--mono); font-size:11.5px; color:var(--text-dim); line-height:1.5; }
+  .rangeCell b{ color:var(--text-dim); font-weight:500; }
+
+  .countCell{ font-family:var(--mono); font-size:12px; color:var(--text); text-align:right; }
+  .countCell .lbl{ display:block; font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.06em; margin-top:2px; }
+
+  .actions{ flex:0 0 auto; display:flex; align-items:center; gap:8px; }
+  .jumpForm{ display:flex; align-items:center; gap:4px; }
+  .jumpForm span{ font-family:var(--mono); font-size:12px; color:var(--text-faint); }
+  .jumpForm input{ width:52px; background:var(--bg); border:1px solid var(--border); color:var(--text); font-family:var(--mono); font-size:12.5px; padding:6px 6px; border-radius:6px; text-align:center; }
+  .jumpForm input:focus{ outline:none; border-color:var(--cyan); }
+  .atBoundary{ font-family:var(--mono); font-size:11px; color:var(--violet); border:1px solid var(--violet-soft); padding:5px 10px; border-radius:6px; }
+
+  .empty{ padding:40px 20px; text-align:center; color:var(--text-faint); font-family:var(--mono); font-size:13px; }
+
+  @media (max-width: 760px){
+    .rowMain{ grid-template-columns:1fr; gap:6px; }
+    .row{ flex-wrap:wrap; }
+    .rangeCell, .countCell{ text-align:left; }
+    .actions{ width:100%; justify-content:flex-start; padding-top:6px; }
+  }
+
+  footer{ margin-top:34px; text-align:center; font-family:var(--mono); font-size:11px; color:var(--text-faint); }
+
+  .modalOverlay{
+    position:fixed; inset:0; background:rgba(4,6,10,0.65);
+    display:flex; align-items:center; justify-content:center;
+    padding:20px; z-index:100;
+  }
+  .modalOverlay[hidden]{ display:none; }
+  .modalCard{
+    background:var(--panel); border:1px solid var(--border); border-radius:12px;
+    padding:24px; max-width:420px; width:100%;
+  }
+  .modalTitle{ font-size:16px; font-weight:600; margin:0 0 8px; }
+  .modalSub{ color:var(--text-dim); font-size:13px; line-height:1.5; margin:0 0 18px; }
+  .modalSub b{ color:var(--text); font-family:var(--mono); font-weight:600; }
+  .modalOptions{ display:flex; flex-direction:column; gap:8px; }
+  .modalOption{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    font-family:var(--sans); font-size:13.5px; text-align:left;
+    border:1px solid var(--border); background:var(--panel-2); color:var(--text);
+    padding:11px 14px; border-radius:8px; cursor:pointer;
+    transition:border-color .15s, color .15s;
+  }
+  .modalOption:hover{ border-color:var(--cyan); color:var(--cyan); }
+  .modalOption .pfxTag{ font-family:var(--mono); color:var(--cyan); font-weight:600; }
+  .modalOption:hover .pfxTag{ color:var(--cyan); }
+  .modalOption.unknown .pfxTag{ color:var(--text-faint); }
+  .modalCancel{
+    display:block; margin:16px auto 0; background:none; border:none;
+    color:var(--text-faint); font-family:var(--mono); font-size:12px; cursor:pointer;
+  }
+  .modalCancel:hover{ color:var(--text-dim); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow"><a href="https://datatracker.ietf.org/doc/html/rfc4291" target="_blank" rel="noopener">RFC 4291</a> / <a href="https://datatracker.ietf.org/doc/html/rfc7421" target="_blank" rel="noopener">RFC 7421</a></div>
+  <h1>IPv6 Subnet Calculator</h1>
+  <p class="sub">Enter your allocated network in CIDR form. The address splits into three parts: the fixed <b>network</b> prefix you were given, a <b>subnet ID</b> you carve up below, and a <b>host</b> portion permanently fixed to the last 64 bits.</p>
+
+  <div class="inputRow">
+    <input type="text" id="cidrInput" value="2001:db8::/32" spellcheck="false" autocomplete="off">
+    <button class="btn primary" id="calcBtn">Calculate</button>
+    <button class="btn ghost" id="resetBtn">Reset tree</button>
+    <button class="btn ghost" id="detectBtn" title="Detects your public IPv6 address via ipify.org and fills in its /64 network">Detect my network</button>
+  </div>
+  <div class="errMsg" id="errMsg"></div>
+  <div class="noteMsg" id="noteMsg"></div>
+
+  <div class="ruler-card">
+    <div class="ruler-top">
+      <div class="ruler-net" id="rulerNet">—</div>
+      <div class="ruler-stats">
+        <div class="stat"><span class="k">Network</span><span class="v" id="statNet">—</span></div>
+        <div class="stat"><span class="k">Subnet bits</span><span class="v" id="statSubnetBits">—</span></div>
+        <div class="stat"><span class="k">Max /64 subnets</span><span class="v" id="statMaxSub">—</span></div>
+        <div class="stat"><span class="k">Host</span><span class="v" id="statHost">—</span></div>
+      </div>
+    </div>
+    <div class="ruler" id="ruler"></div>
+    <div class="ruler-labels" id="rulerLabels"></div>
+    <div class="legend">
+      <span><i class="net"></i>network — fixed by your allocation</span>
+      <span><i class="subnet"></i>subnet ID — yours to divide</span>
+      <span><i class="host"></i>host — fixed, last 64 bits</span>
+    </div>
+  </div>
+
+  <div class="table-card">
+    <div class="table-head">
+      <h2>Subnet tree</h2>
+      <div class="count" id="tableCount">0 leaves</div>
+    </div>
+    <div id="rows"></div>
+  </div>
+
+  <footer>Network + subnet ID + host = 128 bits · host is never subdivided · click any address to copy</footer>
+</div>
+
+<div class="modalOverlay" id="prefixModal" hidden>
+  <div class="modalCard">
+    <div class="modalTitle">What did your ISP delegate?</div>
+    <p class="modalSub">We detected <b id="modalAddr">—</b>. A single address doesn't reveal how large a block your ISP routes to you — pick your delegated prefix if you know it.</p>
+    <div class="modalOptions">
+      <button class="modalOption" data-prefix="48"><span>/48</span><span class="pfxTag">large ISP delegation</span></button>
+      <button class="modalOption" data-prefix="56"><span>/56</span><span class="pfxTag">common home delegation</span></button>
+      <button class="modalOption" data-prefix="60"><span>/60</span><span class="pfxTag">smaller delegation</span></button>
+      <button class="modalOption unknown" data-prefix="64"><span>I don't know</span><span class="pfxTag">use /64</span></button>
+    </div>
+    <button class="modalCancel" id="modalCancel">cancel</button>
+  </div>
+</div>
+
+<script>
+const FULL_MASK = (1n<<128n)-1n;
+const HOST_BITS = 64n;
+const HOST_BOUNDARY = 64; // prefix length at which host ID begins
+
+function sizeOf(prefixLen){ return 1n << BigInt(128-prefixLen); }
+
+function networkAddress(addr, prefixLen){
+  if(prefixLen<=0) return 0n;
+  if(prefixLen>=128) return addr & FULL_MASK;
+  const hostBits = BigInt(128-prefixLen);
+  const mask = FULL_MASK ^ ((1n<<hostBits)-1n);
+  return addr & mask;
+}
+
+function parseIPv6(str){
+  str = str.trim();
+  if(str==='') throw new Error('empty address');
+  if((str.match(/::/g)||[]).length>1) throw new Error('address may only contain one "::"');
+  let groups;
+  if(str.includes('::')){
+    const [leftStr, rightStr] = str.split('::');
+    const left = leftStr ? leftStr.split(':') : [];
+    const right = rightStr ? rightStr.split(':') : [];
+    const missing = 8 - left.length - right.length;
+    if(missing<0) throw new Error('too many groups for compressed address');
+    groups = [...left, ...Array(missing).fill('0'), ...right];
+  } else {
+    groups = str.split(':');
+  }
+  if(groups.length!==8) throw new Error('expected 8 groups, got '+groups.length);
+  let addr = 0n;
+  for(const g of groups){
+    if(g==='' || !/^[0-9a-fA-F]{1,4}$/.test(g)) throw new Error('invalid group "'+g+'"');
+    addr = (addr<<16n) | BigInt(parseInt(g,16));
+  }
+  return addr;
+}
+
+function parseCIDR(str){
+  str = str.trim();
+  const parts = str.split('/');
+  if(parts.length!==2) throw new Error('expected format address/prefix, e.g. 2001:db8::/32');
+  const addr = parseIPv6(parts[0]);
+  const prefixLen = parseInt(parts[1],10);
+  if(!Number.isInteger(prefixLen) || prefixLen<0 || prefixLen>128) throw new Error('prefix length must be between 0 and 128');
+  return {addr, prefixLen};
+}
+
+function toHextets(addr){
+  const hex = addr.toString(16).padStart(32,'0');
+  const groups = [];
+  for(let i=0;i<8;i++) groups.push(hex.slice(i*4,i*4+4));
+  return groups;
+}
+
+function formatIPv6(addr){
+  const raw = toHextets(addr);
+  const values = raw.map(g=>parseInt(g,16));
+  let bestStart=-1,bestLen=0,curStart=-1,curLen=0;
+  for(let i=0;i<8;i++){
+    if(values[i]===0){
+      if(curStart===-1) curStart=i;
+      curLen++;
+      if(curLen>bestLen){ bestLen=curLen; bestStart=curStart; }
+    } else { curStart=-1; curLen=0; }
+  }
+  const hexGroups = values.map(v=>v.toString(16));
+  if(bestLen>=2){
+    const before = hexGroups.slice(0,bestStart);
+    const after = hexGroups.slice(bestStart+bestLen);
+    const left = before.join(':');
+    const right = after.join(':');
+    if(left==='' && right==='') return '::';
+    if(left==='') return '::'+right;
+    if(right==='') return left+'::';
+    return left+'::'+right;
+  }
+  return hexGroups.join(':');
+}
+
+function fmtBig(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+// ---- tree state ----
+let root = null;
+let maxDivide = HOST_BOUNDARY; // prefix length at which the subnet ID is exhausted
+
+function makeRoot(addr, prefixLen){
+  const base = networkAddress(addr, prefixLen);
+  root = {base, prefixLen, parent:null, children:null};
+  maxDivide = Math.max(prefixLen, HOST_BOUNDARY);
+}
+
+function divideNode(node){
+  if(node.prefixLen>=maxDivide) return;
+  const newPrefix = node.prefixLen+1;
+  const half = sizeOf(newPrefix);
+  node.children = [
+    {base:node.base, prefixLen:newPrefix, parent:node, children:null},
+    {base:node.base+half, prefixLen:newPrefix, parent:node, children:null}
+  ];
+}
+
+function joinParent(node){
+  if(!node.parent) return;
+  node.parent.children = null;
+}
+
+function recursiveDivideTo(node, target){
+  if(node.prefixLen>=target) return;
+  if(!node.children) divideNode(node);
+  recursiveDivideTo(node.children[0], target);
+  recursiveDivideTo(node.children[1], target);
+}
+
+function jumpDivide(node, target){
+  if(!Number.isInteger(target) || target<=node.prefixLen || target>maxDivide) return;
+  const count = 1n << BigInt(target-node.prefixLen);
+  if(count>128){
+    showErr('That split would create '+fmtBig(count)+' subnets in one go — try a smaller jump.');
+    return;
+  }
+  recursiveDivideTo(node, target);
+  render();
+}
+
+function collectLeaves(node, depth, guides, out){
+  if(!node.children){ out.push({node, depth, guides}); return; }
+  collectLeaves(node.children[0], depth+1, [...guides, true], out);
+  collectLeaves(node.children[1], depth+1, [...guides, false], out);
+}
+
+function showErr(msg){ document.getElementById('errMsg').textContent = msg || ''; }
+function showNote(msg){ document.getElementById('noteMsg').textContent = msg || ''; }
+
+// ---- rendering ----
+function copyText(text){
+  if(navigator.clipboard && window.isSecureContext){
+    return navigator.clipboard.writeText(text);
+  }
+  return new Promise((resolve, reject)=>{
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    let ok = false;
+    try{ ok = document.execCommand('copy'); } catch(e){}
+    document.body.removeChild(ta);
+    ok ? resolve() : reject(new Error('copy failed'));
+  });
+}
+
+function renderRuler(){
+  const rulerEl = document.getElementById('ruler');
+  const labelsEl = document.getElementById('rulerLabels');
+  rulerEl.innerHTML = '';
+  labelsEl.innerHTML = '';
+  if(!root){ document.getElementById('rulerNet').textContent = '—'; return; }
+
+  document.getElementById('rulerNet').innerHTML =
+    formatIPv6(root.base) + '<span class="slash">/</span><span class="prefixnum">'+root.prefixLen+'</span>';
+
+  const subnetBits = Math.max(0, HOST_BOUNDARY - root.prefixLen);
+  document.getElementById('statNet').textContent = '/'+root.prefixLen+' fixed';
+  document.getElementById('statSubnetBits').textContent = subnetBits + ' bits';
+  document.getElementById('statMaxSub').textContent = fmtBig(1n<<BigInt(subnetBits));
+  document.getElementById('statHost').textContent = '64 bits (fixed)';
+
+  if(root.prefixLen > HOST_BOUNDARY){
+    showNote('Note: this prefix is longer than /64, so there is no room for a standard subnet ID or a full 64-bit host portion.');
+  } else if(root.prefixLen === HOST_BOUNDARY){
+    showNote('This is already a /64 — no subnet bits are available, only host addresses within it.');
+  } else {
+    showNote('');
+  }
+
+  for(let g=0; g<8; g++){
+    const grp = document.createElement('div');
+    grp.className = 'grp';
+    for(let b=0; b<16; b++){
+      const bitIndex = g*16+b;
+      const bit = document.createElement('div');
+      let cls = 'bit';
+      if(bitIndex < root.prefixLen) cls += ' net';
+      else if(bitIndex < HOST_BOUNDARY) cls += ''; // subnet zone, default amber-soft bg
+      else cls += ' host';
+      if(bitIndex === root.prefixLen-1 || bitIndex === HOST_BOUNDARY-1) cls += ' edge';
+      bit.className = cls;
+      grp.appendChild(bit);
+    }
+    rulerEl.appendChild(grp);
+    const lbl = document.createElement('div');
+    lbl.className = 'grp';
+    lbl.textContent = 'g'+g;
+    labelsEl.appendChild(lbl);
+  }
+}
+
+function render(){
+  renderRuler();
+  const rowsEl = document.getElementById('rows');
+  rowsEl.innerHTML = '';
+  if(!root){
+    rowsEl.innerHTML = '<div class="empty">Enter a network above and hit Calculate.</div>';
+    document.getElementById('tableCount').textContent = '0 leaves';
+    return;
+  }
+
+  const leaves = [];
+  collectLeaves(root, 0, [], leaves);
+  document.getElementById('tableCount').textContent = leaves.length + (leaves.length===1 ? ' leaf' : ' leaves');
+
+  for(const {node, depth, guides} of leaves){
+    const row = document.createElement('div');
+    row.className = 'row';
+
+    const guidesEl = document.createElement('div');
+    guidesEl.className = 'guides';
+    for(const g of guides){
+      const gEl = document.createElement('div');
+      gEl.className = 'guide' + (g ? ' line' : '');
+      guidesEl.appendChild(gEl);
+    }
+    row.appendChild(guidesEl);
+
+    const main = document.createElement('div');
+    main.className = 'rowMain';
+
+    const netCell = document.createElement('div');
+    netCell.className = 'cell netCell';
+    const addrStr = formatIPv6(node.base);
+    const subnetIdBits = Math.max(0, node.prefixLen - root.prefixLen);
+    const subnetOpenBits = Math.max(0, HOST_BOUNDARY - node.prefixLen);
+    netCell.innerHTML = '<span class="addr" title="Click to copy">'+addrStr+'</span><span class="pfx">/'+node.prefixLen+'</span>' +
+      '<div class="minibar">'+
+        '<div class="net" style="flex:'+Math.max(root.prefixLen,0)+'"></div>'+
+        (subnetIdBits>0 ? '<div class="subnetDone" style="flex:'+subnetIdBits+'"></div>' : '')+
+        (subnetOpenBits>0 ? '<div class="subnetOpen" style="flex:'+subnetOpenBits+'"></div>' : '')+
+        '<div class="host" style="flex:64"></div>'+
+      '</div>';
+    const addrEl = netCell.querySelector('.addr');
+    addrEl.addEventListener('click', ()=>{
+      copyText(addrStr+'/'+node.prefixLen).then(()=>{
+        addrEl.classList.add('copied');
+        clearTimeout(addrEl._copyTimer);
+        addrEl._copyTimer = setTimeout(()=>addrEl.classList.remove('copied'), 700);
+      }).catch(()=>{});
+    });
+    main.appendChild(netCell);
+
+    const last = node.base + sizeOf(node.prefixLen) - 1n;
+    const rangeCell = document.createElement('div');
+    rangeCell.className = 'cell rangeCell';
+    rangeCell.innerHTML = formatIPv6(node.base)+'<br><b>to</b><br>'+formatIPv6(last);
+    main.appendChild(rangeCell);
+
+    const countCell = document.createElement('div');
+    countCell.className = 'cell countCell';
+    const num64 = node.prefixLen<HOST_BOUNDARY ? fmtBig(1n<<BigInt(HOST_BOUNDARY-node.prefixLen))+' × /64' : '1 × /64';
+    countCell.innerHTML = num64 + '<span class="lbl">'+ (node.prefixLen<HOST_BOUNDARY ? 'contains' : 'this subnet') +'</span>';
+    main.appendChild(countCell);
+
+    row.appendChild(main);
+
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+
+    if(node.prefixLen>=maxDivide){
+      const boundary = document.createElement('div');
+      boundary.className = 'atBoundary';
+      boundary.textContent = node.prefixLen===HOST_BOUNDARY ? 'At /64 — host boundary' : 'No subnet bits';
+      actions.appendChild(boundary);
+    } else {
+      const divideBtn = document.createElement('button');
+      divideBtn.className = 'btn small';
+      divideBtn.textContent = 'Split /'+(node.prefixLen+1);
+      divideBtn.addEventListener('click', ()=>{ divideNode(node); render(); });
+      actions.appendChild(divideBtn);
+
+      const jumpForm = document.createElement('div');
+      jumpForm.className = 'jumpForm';
+      const jumpSpan = document.createElement('span');
+      jumpSpan.textContent = 'to /';
+      const jumpInput = document.createElement('input');
+      jumpInput.type = 'number';
+      jumpInput.min = node.prefixLen+1;
+      jumpInput.max = maxDivide;
+      jumpInput.placeholder = String(Math.min(node.prefixLen+4, maxDivide));
+      const jumpBtn = document.createElement('button');
+      jumpBtn.className = 'btn small ghost';
+      jumpBtn.textContent = 'Go';
+      jumpBtn.addEventListener('click', ()=>{
+        showErr('');
+        jumpDivide(node, parseInt(jumpInput.value,10));
+      });
+      jumpForm.appendChild(jumpSpan);
+      jumpForm.appendChild(jumpInput);
+      jumpForm.appendChild(jumpBtn);
+      actions.appendChild(jumpForm);
+    }
+
+    const canJoin = node.parent && node.parent.children && !node.parent.children[0].children && !node.parent.children[1].children;
+    const joinBtn = document.createElement('button');
+    joinBtn.className = 'btn small ghost';
+    joinBtn.textContent = 'Join';
+    joinBtn.disabled = !canJoin;
+    joinBtn.addEventListener('click', ()=>{ joinParent(node); render(); });
+    actions.appendChild(joinBtn);
+
+    row.appendChild(actions);
+    rowsEl.appendChild(row);
+  }
+}
+
+document.getElementById('calcBtn').addEventListener('click', ()=>{
+  showErr('');
+  try{
+    const {addr, prefixLen} = parseCIDR(document.getElementById('cidrInput').value);
+    makeRoot(addr, prefixLen);
+    render();
+  } catch(e){
+    showErr(e.message);
+  }
+});
+
+document.getElementById('resetBtn').addEventListener('click', ()=>{
+  if(!root) return;
+  root.children = null;
+  render();
+});
+
+document.getElementById('cidrInput').addEventListener('keydown', (e)=>{
+  if(e.key==='Enter') document.getElementById('calcBtn').click();
+});
+
+function openPrefixModal(addr){
+  return new Promise((resolve)=>{
+    const overlay = document.getElementById('prefixModal');
+    document.getElementById('modalAddr').textContent = formatIPv6(addr);
+    overlay.hidden = false;
+
+    function cleanup(result){
+      overlay.hidden = true;
+      overlay.removeEventListener('click', onOverlayClick);
+      document.removeEventListener('keydown', onKeydown);
+      optionBtns.forEach(b=>b.removeEventListener('click', onOptionClick));
+      cancelBtn.removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOptionClick(e){ cleanup(parseInt(e.currentTarget.dataset.prefix,10)); }
+    function onCancel(){ cleanup(null); }
+    function onOverlayClick(e){ if(e.target===overlay) cleanup(null); }
+    function onKeydown(e){ if(e.key==='Escape') cleanup(null); }
+
+    const optionBtns = Array.from(overlay.querySelectorAll('.modalOption'));
+    const cancelBtn = document.getElementById('modalCancel');
+    optionBtns.forEach(b=>b.addEventListener('click', onOptionClick));
+    cancelBtn.addEventListener('click', onCancel);
+    overlay.addEventListener('click', onOverlayClick);
+    document.addEventListener('keydown', onKeydown);
+  });
+}
+
+document.getElementById('detectBtn').addEventListener('click', async ()=>{
+  showErr('');
+  const btn = document.getElementById('detectBtn');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Detecting…';
+  try{
+    const res = await fetch('https://api64.ipify.org?format=json');
+    if(!res.ok) throw new Error('ipify request failed ('+res.status+')');
+    const data = await res.json();
+    const ip = data.ip;
+    if(!ip || !ip.includes(':')) throw new Error('your connection returned an IPv4 address ('+(ip||'unknown')+') — no IPv6 connectivity detected');
+    const addr = parseIPv6(ip);
+    btn.disabled = false;
+    btn.textContent = original;
+    const prefixLen = await openPrefixModal(addr);
+    if(prefixLen===null) return;
+    const net = networkAddress(addr, prefixLen);
+    document.getElementById('cidrInput').value = formatIPv6(net)+'/'+prefixLen;
+    document.getElementById('calcBtn').click();
+    return;
+  } catch(e){
+    showErr('Detection failed: '+e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = original;
+  }
+});
+
+document.getElementById('calcBtn').click();
+</script>
+</body>
+</html>
