@@ -3,9 +3,9 @@ defaultContentLanguage: "en"
 languages:
   en:
     disabled: false
-    languageCode: en-US
-    languageDirection: ltr
-    languageName: English
+    locale: en-US
+    direction: ltr
+    label: English
     params:
       subtitle: Reference, Tutorials, and Explanations
     title: NSpeed
@@ -13,9 +13,9 @@ languages:
 
   fr:
     disabled: false
-    languageCode: fr-FR
-    languageDirection: ltr
-    languageName: Français
+    locale: fr-FR
+    direction: ltr
+    label: Français
     params:
       subtitle: Références, Tutoriels et Explications
     title: NSpeed
