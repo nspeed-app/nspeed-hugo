@@ -97,7 +97,6 @@
   #view-map svg{ width:100%; height:auto; display:block; border-radius:6px; overflow:hidden; touch-action:none; cursor:zoom-in; }
   #view-map .zoomHint{ position:absolute; top:28px; right:28px; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); background:rgba(10,13,18,0.55); padding:4px 9px; border-radius:5px; pointer-events:none; }
   #view-map .tile{ cursor:default; transition:opacity .12s; }
-  #view-map .tile.drillable{ cursor:pointer; }
   #view-map .tile:hover{ opacity:.86; }
   #view-map .tile-label{ font-family:var(--mono); pointer-events:none; fill:#0A0D12; font-weight:600; }
   #view-map .tile-sub{ font-family:var(--mono); pointer-events:none; fill:#0A0D12; opacity:.72; }
@@ -316,7 +315,7 @@
 
   <div class="map-card">
     <svg id="mapSvg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg"></svg>
-    <div class="zoomHint">Scroll to zoom</div>
+    <div class="zoomHint">Scroll to zoom · drag to pan</div>
     <div class="legend" id="legend"></div>
   </div>
 
@@ -428,7 +427,7 @@ function openInCalculator(cidr){
 /* ---------------- classification ---------------- */
 function classifyTop(allocation){
   const a = allocation.toLowerCase();
-  if(a.includes('global unicast')) return {category:'global', drill:true};
+  if(a.includes('global unicast')) return {category:'global'};
   if(a.includes('unique local')) return {category:'unique'};
   if(a.includes('link-scoped') || a.includes('link-local')) return {category:'link'};
   if(a.includes('multicast')) return {category:'multicast'};
@@ -560,6 +559,12 @@ let unicastParent = parseCIDR('2000::/3');
 let unicastResolved = gapFill(networkAddress(unicastParent.addr,3), 3, resolveUnicast(UNICAST_RAW));
 let specialResolved = resolveSpecial(SPECIAL_RAW).sort((a,b)=> a.base<b.base?-1:(a.base>b.base?1:0));
 
+/* one flat, fully-tiling dataset: the "2000::/3 Global Unicast" placeholder from the top-level
+   registry is replaced by its actual RIR breakdown, so the whole address space is a single
+   treemap — drilling in (scroll) is how you get from the continent-sized blocks down to the
+   individual RIR allocations, instead of a separate click-to-swap-dataset view. */
+let allResolved = topResolved.flatMap(e => e.category==='global' ? unicastResolved : [e]);
+
 /* special-purpose entries don't tile the space — they nest inside top/unicast blocks, so
    look up whichever ones fall entirely within the currently selected tile's range */
 function findSpecialWithin(base, size){
@@ -668,7 +673,6 @@ function squarify(items, x0,y0,x1,y1){
 }
 
 /* ---------------- map view state + render ---------------- */
-let currentView = 'root';   // 'root' | 'unicast'
 let pulseTarget = null;     // base BigInt of tile to pulse-highlight after a locate
 let selectedBase = null;    // base BigInt of the currently selected (clicked/tapped) tile
 
@@ -676,36 +680,21 @@ const svg = document.getElementById('mapSvg');
 const legendEl = document.getElementById('legend');
 const breadcrumbEl = document.getElementById('breadcrumb');
 const detailEl = document.getElementById('detailCard');
-let lastZoomedView = null; // used to reset the drill window whenever the underlying dataset (root vs unicast) swaps
-
-function currentList(){ return currentView==='root' ? topResolved : unicastResolved; }
 
 function renderBreadcrumb(){
   breadcrumbEl.innerHTML = '';
   const root = document.createElement('span');
-  root.className = 'crumb' + (currentView==='root' ? ' current' : '');
+  root.className = 'crumb';
   root.textContent = 'Whole IPv6 address space (::/0)';
-  root.addEventListener('click', ()=>{ if(currentView!=='root'){ currentView='root'; selectedBase=null; renderAll(); } });
+  root.title = 'Reset zoom to the full address space';
+  root.addEventListener('click', ()=>{ resetDrillImmediate(); drawTiles(); });
   breadcrumbEl.appendChild(root);
-  if(currentView==='unicast'){
-    const sep = document.createElement('span'); sep.className='sep'; sep.textContent='›';
-    breadcrumbEl.appendChild(sep);
-    const node = document.createElement('span');
-    node.className = 'crumb current';
-    node.textContent = '2000::/3 — Global Unicast';
-    breadcrumbEl.appendChild(node);
-  }
 }
 
-function showDetail(entry, parentSize){
+function showDetail(entry){
   if(!entry){ detailEl.innerHTML = '<div class="detail-empty">Click or tap a block to see its details.</div>'; return; }
   const meta = CATEGORY_META[entry.category];
   const pctTotal = fmtPct(Number(entry.size)/Number(1n<<128n));
-  let pctParentHtml = '';
-  if(parentSize){
-    const pctParent = fmtPct(Number(entry.size)/Number(parentSize));
-    pctParentHtml = `<div><span class="k">Share of this view</span><span class="v">${pctParent}</span></div>`;
-  }
   const prefixLabel = entry.prefix ? (entry.prefix) : (formatIPv6(entry.base)+' – '+formatIPv6(entry.base+entry.size-1n));
   const hostBits = entry.prefixLen!==undefined ? (128-entry.prefixLen) : null;
   const sizeLabel = hostBits!==null ? ('2'+sup(hostBits)+' addresses') : fmtAddrCount(entry.size);
@@ -724,12 +713,10 @@ function showDetail(entry, parentSize){
             <div><span class="k">Status</span><span class="v">${entry.status}</span></div>
             <div><span class="k">Allocated</span><span class="v">${entry.date}</span></div>
             <div><span class="k">Total addresses</span><span class="v">${sizeLabel}</span></div>
-            ${pctParentHtml}
             <div><span class="k">Share of IPv6 space</span><span class="v">${pctTotal}</span></div>`;
   } else {
     rows = `<div><span class="k">Status</span><span class="v">Unallocated</span></div>
             <div><span class="k">Total addresses</span><span class="v">${sizeLabel}</span></div>
-            ${pctParentHtml}
             <div><span class="k">Share of IPv6 space</span><span class="v">${pctTotal}</span></div>`;
   }
 
@@ -805,14 +792,10 @@ function drawTiles(){
     rect.setAttribute('stroke', '#0A0D12');
     rect.setAttribute('stroke-width', '1.5');
     const cls = ['tile'];
-    if(r.drill && currentView==='root') cls.push('drillable');
     if(meta.textDim) cls.push('dim-fill');
     if(selectedBase!==null && r.base===selectedBase) cls.push('tile-selected');
     g.setAttribute('class', cls.join(' '));
-    g.addEventListener('click', ()=>{
-      if(r.drill && currentView==='root'){ currentView='unicast'; selectedBase=null; renderAll(); }
-      else { selectedBase = r.base; renderAll(); }
-    });
+    g.addEventListener('click', ()=>{ selectedBase = r.base; renderAll(); });
     g.appendChild(rect);
 
     if(m.w>54 && m.h>20){
@@ -845,16 +828,14 @@ function drawTiles(){
 
 function renderAll(){
   renderBreadcrumb();
-  const list = currentList();
-  const items = list.map(e=>({...e, value:Number(e.size)}));
+  const items = allResolved.map(e=>({...e, value:Number(e.size)}));
   cachedRects = squarify(items, MAP_BOUNDS.x0, MAP_BOUNDS.y0, MAP_BOUNDS.x1, MAP_BOUNDS.y1);
-  if(lastZoomedView !== currentView){ resetDrillImmediate(); lastZoomedView = currentView; }
   drawTiles();
   pulseTarget = null;
 
-  renderLegend(list);
+  renderLegend(allResolved);
   const selEntry = selectedBase!==null ? cachedRects.find(r=>r.base===selectedBase) : null;
-  showDetail(selEntry || null, currentView==='unicast' ? sizeOf(3) : null);
+  showDetail(selEntry || null);
 }
 
 /* ---------------- map drill zoom: smooth, cursor-anchored, mouse-wheel driven ---------------- */
@@ -880,7 +861,7 @@ function stepDrillAnimation(){
     y1: drillView.y1 + (drillTarget.y1-drillView.y1)*ease
   };
   const settled = ['x0','y0','x1','y1'].every(k => Math.abs(drillTarget[k]-drillView[k])<0.05);
-  if(settled) drillView = {...drillTarget};
+  if(settled){ drillView = {...drillTarget}; updateCursor(); }
   drawTiles();
   drillRafId = settled ? null : requestAnimationFrame(stepDrillAnimation);
 }
@@ -891,6 +872,14 @@ function resetDrillImmediate(){
   if(drillRafId!==null){ cancelAnimationFrame(drillRafId); drillRafId=null; }
   drillView = {...MAP_BOUNDS};
   drillTarget = {...MAP_BOUNDS};
+  updateCursor();
+}
+function isAtFullView(){
+  return drillView.x0<=MAP_BOUNDS.x0+0.01 && drillView.y0<=MAP_BOUNDS.y0+0.01 &&
+         drillView.x1>=MAP_BOUNDS.x1-0.01 && drillView.y1>=MAP_BOUNDS.y1-0.01;
+}
+function updateCursor(){
+  svg.style.cursor = isAtFullView() ? 'zoom-in' : 'grab';
 }
 
 svg.addEventListener('wheel', (e)=>{
@@ -913,25 +902,85 @@ svg.addEventListener('wheel', (e)=>{
   scheduleDrillAnimation();
 }, {passive:false});
 
+/* ---------------- map pan: drag with the mouse once drilled in ---------------- */
+const DRAG_THRESHOLD = 4; // px of pointer movement before a press is treated as a pan, not a click
+let isPanning = false, panMoved = false, panStartClientX = 0, panStartClientY = 0, panStartView = null;
+let suppressNextTileClick = false;
+
+svg.addEventListener('pointerdown', (e)=>{
+  if(e.button!==0) return;
+  isPanning = true; panMoved = false;
+  panStartClientX = e.clientX; panStartClientY = e.clientY;
+  panStartView = {...drillTarget};
+});
+
+svg.addEventListener('pointermove', (e)=>{
+  if(!isPanning) return;
+  const dxClient = e.clientX-panStartClientX, dyClient = e.clientY-panStartClientY;
+  if(!panMoved){
+    if(Math.hypot(dxClient,dyClient)<DRAG_THRESHOLD) return;
+    panMoved = true;
+    svg.style.cursor = 'grabbing';
+    // only capture once we know it's a drag — capturing on every plain click would retarget
+    // the resulting synthetic 'click' event to the svg itself, so tiles never see it
+    try{ svg.setPointerCapture(e.pointerId); }catch(err){}
+  }
+  const p0 = svg.createSVGPoint(); p0.x=panStartClientX; p0.y=panStartClientY;
+  const p1 = svg.createSVGPoint(); p1.x=e.clientX; p1.y=e.clientY;
+  const ctmInv = svg.getScreenCTM().inverse();
+  const sp0 = p0.matrixTransform(ctmInv), sp1 = p1.matrixTransform(ctmInv);
+  const dSX = sp1.x-sp0.x, dSY = sp1.y-sp0.y;
+  const vw = panStartView.x1-panStartView.x0, vh = panStartView.y1-panStartView.y0;
+  const scaleX = (MAP_BOUNDS.x1-MAP_BOUNDS.x0)/vw, scaleY = (MAP_BOUNDS.y1-MAP_BOUNDS.y0)/vh;
+  const x0 = Math.min(MAP_BOUNDS.x1-vw, Math.max(MAP_BOUNDS.x0, panStartView.x0 - dSX/scaleX));
+  const y0 = Math.min(MAP_BOUNDS.y1-vh, Math.max(MAP_BOUNDS.y0, panStartView.y0 - dSY/scaleY));
+  if(drillRafId!==null){ cancelAnimationFrame(drillRafId); drillRafId=null; }
+  drillTarget = {x0, y0, x1:x0+vw, y1:y0+vh};
+  drillView = {...drillTarget};
+  drawTiles();
+});
+
+function endPan(){
+  if(!isPanning) return;
+  isPanning = false;
+  if(panMoved) suppressNextTileClick = true;
+  panMoved = false;
+  updateCursor();
+}
+svg.addEventListener('pointerup', endPan);
+svg.addEventListener('pointercancel', endPan);
+
+// swallow the click a drag-release produces before it reaches a tile's own click handler
+svg.addEventListener('click', (e)=>{
+  if(suppressNextTileClick){ suppressNextTileClick = false; e.stopPropagation(); }
+}, true);
+
 /* ---------------- locate ---------------- */
 function findContaining(list, addr){
   return list.find(e => addr>=e.base && addr < e.base+e.size);
 }
+/* smoothly drills the view so the given laid-out rect (from cachedRects) is clearly visible,
+   with some surrounding context — not just the bare tile filling the whole area */
+function focusOnRect(r, pad){
+  const fullW = MAP_BOUNDS.x1-MAP_BOUNDS.x0, fullH = MAP_BOUNDS.y1-MAP_BOUNDS.y0;
+  const cx = r.x+r.w/2, cy = r.y+r.h/2;
+  let vw = Math.max(r.w*pad, r.h*pad*(fullW/fullH));
+  vw = Math.min(fullW, Math.max(fullW*DRILL_MIN_FRACTION, vw));
+  const vh = vw*(fullH/fullW);
+  const x0 = Math.min(MAP_BOUNDS.x1-vw, Math.max(MAP_BOUNDS.x0, cx-vw/2));
+  const y0 = Math.min(MAP_BOUNDS.y1-vh, Math.max(MAP_BOUNDS.y0, cy-vh/2));
+  drillTarget = {x0, y0, x1:x0+vw, y1:y0+vh};
+  clampDrillTarget();
+  scheduleDrillAnimation();
+}
 function locateAddr(addr){
-  const topHit = findContaining(topResolved, addr);
-  if(!topHit) return;
-  if(topHit.category==='global'){
-    const uHit = findContaining(unicastResolved, addr);
-    currentView = 'unicast';
-    pulseTarget = uHit ? uHit.base : null;
-    selectedBase = uHit ? uHit.base : null;
-    renderAll();
-  } else {
-    currentView = 'root';
-    pulseTarget = topHit.base;
-    selectedBase = topHit.base;
-    renderAll();
-  }
+  const hit = findContaining(allResolved, addr);
+  if(!hit) return;
+  pulseTarget = hit.base;
+  selectedBase = hit.base;
+  renderAll();
+  const r = cachedRects.find(r=>r.base===hit.base);
+  if(r) focusOnRect(r, 8);
 }
 document.getElementById('searchForm').addEventListener('submit', (e)=>{
   e.preventDefault();
