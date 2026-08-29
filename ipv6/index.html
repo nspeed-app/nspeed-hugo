@@ -839,7 +839,11 @@ function renderAll(){
 }
 
 /* ---------------- map drill zoom: smooth, cursor-anchored, mouse-wheel driven ---------------- */
-const DRILL_MIN_FRACTION = 1/32; // how far in you can drill (~32x)
+/* the dataset spans from /3-sized reserved continents down to /23 RIR allocations — a
+   ~2^20 difference in address count, i.e. ~2^10 (1024x) in linear treemap size. The drill
+   window needs to shrink about that far for the smallest tiles to ever cross the label
+   threshold. */
+const DRILL_MIN_FRACTION = 1/1600; // how far in you can drill (~1600x)
 
 function clampDrillTarget(){
   const fullW = MAP_BOUNDS.x1-MAP_BOUNDS.x0, fullH = MAP_BOUNDS.y1-MAP_BOUNDS.y0;
