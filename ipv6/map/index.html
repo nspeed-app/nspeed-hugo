@@ -281,19 +281,44 @@ function resolveSpecial(raw){
     return {kind:'special', prefix:e.prefix, base, prefixLen, size:sizeOf(prefixLen), name:e.name, rfc:e.rfc, date:e.date, term:e.term};
   });
 }
+function trailingZeroBits(x){
+  if(x===0n) return 128;
+  let n=0;
+  while((x & 1n)===0n){ x >>= 1n; n++; }
+  return n;
+}
+/* an arbitrary [start,end) range rarely lines up with a single power-of-2 block —
+   decompose it into the minimal set of CIDR-aligned blocks, same as route summarization */
+function rangeToCidrBlocks(start, end){
+  const blocks = [];
+  let cursor = start;
+  while(cursor<end){
+    let alignBits = trailingZeroBits(cursor);
+    let blockSize = 1n << BigInt(alignBits);
+    while(blockSize>end-cursor){ blockSize >>= 1n; alignBits--; }
+    blocks.push({base:cursor, size:blockSize, prefixLen:128-alignBits});
+    cursor += blockSize;
+  }
+  return blocks;
+}
 function gapFill(parentBase, parentPrefixLen, children){
   const parentSize = sizeOf(parentPrefixLen);
   const parentEnd = parentBase + parentSize;
   const sorted = children.slice().sort((a,b)=> a.base<b.base?-1:(a.base>b.base?1:0));
   const out = [];
   let cursor = parentBase;
+  function pushGap(gapStart, gapEnd){
+    for(const blk of rangeToCidrBlocks(gapStart, gapEnd)){
+      out.push({kind:'gap', base:blk.base, size:blk.size, prefixLen:blk.prefixLen, prefix:formatIPv6(blk.base)+'/'+blk.prefixLen, category:'unallocated', allocation:'Unallocated', note:'Not yet listed in this IANA registry as an allocation.'});
+    }
+  }
   for(const c of sorted){
-    if(c.base>cursor) out.push({kind:'gap', base:cursor, size:c.base-cursor, category:'unallocated', allocation:'Unallocated', note:'Not yet listed in this IANA registry as an allocation.'});
+    if(c.base>cursor) pushGap(cursor, c.base);
     out.push(c);
     const cEnd = c.base+c.size;
     if(cEnd>cursor) cursor=cEnd;
   }
-  if(cursor<parentEnd) out.push({kind:'gap', base:cursor, size:parentEnd-cursor, category:'unallocated', allocation:'Unallocated', note:'Not yet listed in this IANA registry as an allocation.'});
+  if(cursor<parentEnd) pushGap(cursor, parentEnd);
   return out;
 }
 
