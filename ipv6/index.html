@@ -93,8 +93,9 @@
   #view-map .breadcrumb .crumb.current{ color:var(--text); cursor:default; }
   #view-map .breadcrumb .sep{ color:var(--text-faint); }
 
-  #view-map .map-card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; }
-  #view-map svg{ width:100%; height:auto; display:block; border-radius:6px; }
+  #view-map .map-card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; position:relative; }
+  #view-map svg{ width:100%; height:auto; display:block; border-radius:6px; overflow:hidden; touch-action:none; cursor:zoom-in; }
+  #view-map .zoomHint{ position:absolute; top:28px; right:28px; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); background:rgba(10,13,18,0.55); padding:4px 9px; border-radius:5px; pointer-events:none; }
   #view-map .tile{ cursor:default; transition:opacity .12s; }
   #view-map .tile.drillable{ cursor:pointer; }
   #view-map .tile:hover{ opacity:.86; }
@@ -315,6 +316,7 @@
 
   <div class="map-card">
     <svg id="mapSvg" viewBox="0 0 1000 600" xmlns="http://www.w3.org/2000/svg"></svg>
+    <div class="zoomHint">Scroll to zoom</div>
     <div class="legend" id="legend"></div>
   </div>
 
@@ -674,6 +676,7 @@ const svg = document.getElementById('mapSvg');
 const legendEl = document.getElementById('legend');
 const breadcrumbEl = document.getElementById('breadcrumb');
 const detailEl = document.getElementById('detailCard');
+let lastZoomedView = null; // used to reset the drill window whenever the underlying dataset (root vs unicast) swaps
 
 function currentList(){ return currentView==='root' ? topResolved : unicastResolved; }
 
@@ -765,20 +768,38 @@ function renderLegend(list){
   }).join('');
 }
 
-function renderAll(){
-  renderBreadcrumb();
-  const list = currentList();
-  const items = list.map(e=>({...e, value:Number(e.size)}));
-  const rects = squarify(items, 4, 4, 992, 592);
+/* squarify() lays every tile out once over the full MAP_BOUNDS rectangle ("virtual space").
+   Scrolling doesn't visually scale that layout (which would blow up text/strokes) — instead it
+   narrows a "drill window" onto a sub-region of the virtual space and remaps that sub-region to
+   fill MAP_BOUNDS again, so tiles (and their labels, recomputed from their new mapped size) are
+   redrawn at their true drilled-in size, same as if the map had been laid out that way natively. */
+const MAP_BOUNDS = {x0:4, y0:4, x1:992, y1:592};
+let cachedRects = [];                     // full layout for the current list, in virtual space
+let drillView = {...MAP_BOUNDS};          // currently displayed drill window (eases toward target)
+let drillTarget = {...MAP_BOUNDS};        // authoritative drill window
+let drillRafId = null;
 
+function mapToDrillView(r){
+  const scaleX = (MAP_BOUNDS.x1-MAP_BOUNDS.x0)/(drillView.x1-drillView.x0);
+  const scaleY = (MAP_BOUNDS.y1-MAP_BOUNDS.y0)/(drillView.y1-drillView.y0);
+  return {
+    x: MAP_BOUNDS.x0 + (r.x-drillView.x0)*scaleX,
+    y: MAP_BOUNDS.y0 + (r.y-drillView.y0)*scaleY,
+    w: r.w*scaleX,
+    h: r.h*scaleY
+  };
+}
+
+function drawTiles(){
   svg.innerHTML = '';
-  for(const r of rects){
+  for(const r of cachedRects){
+    const m = mapToDrillView(r);
     const g = document.createElementNS('http://www.w3.org/2000/svg','g');
     const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-    rect.setAttribute('x', r.x.toFixed(2));
-    rect.setAttribute('y', r.y.toFixed(2));
-    rect.setAttribute('width', Math.max(r.w,0).toFixed(2));
-    rect.setAttribute('height', Math.max(r.h,0).toFixed(2));
+    rect.setAttribute('x', m.x.toFixed(2));
+    rect.setAttribute('y', m.y.toFixed(2));
+    rect.setAttribute('width', Math.max(m.w,0).toFixed(2));
+    rect.setAttribute('height', Math.max(m.h,0).toFixed(2));
     const meta = CATEGORY_META[r.category];
     rect.style.fill = meta.color;
     rect.setAttribute('stroke', '#0A0D12');
@@ -794,19 +815,19 @@ function renderAll(){
     });
     g.appendChild(rect);
 
-    if(r.w>54 && r.h>20){
+    if(m.w>54 && m.h>20){
       const label = document.createElementNS('http://www.w3.org/2000/svg','text');
-      label.setAttribute('x', (r.x+6).toFixed(2));
-      label.setAttribute('y', (r.y+16).toFixed(2));
-      label.setAttribute('font-size', Math.min(13, Math.max(9, r.h/5)).toFixed(1));
+      label.setAttribute('x', (m.x+6).toFixed(2));
+      label.setAttribute('y', (m.y+16).toFixed(2));
+      label.setAttribute('font-size', Math.min(13, Math.max(9, m.h/5)).toFixed(1));
       label.setAttribute('class','tile-label');
       label.textContent = r.kind==='unicast' ? r.designation : (r.kind==='top' ? r.allocation : 'Unallocated');
       g.appendChild(label);
-      if(r.h>36){
+      if(m.h>36){
         const sub = document.createElementNS('http://www.w3.org/2000/svg','text');
-        sub.setAttribute('x', (r.x+6).toFixed(2));
-        sub.setAttribute('y', (r.y+30).toFixed(2));
-        sub.setAttribute('font-size', Math.min(11, Math.max(8, r.h/7)).toFixed(1));
+        sub.setAttribute('x', (m.x+6).toFixed(2));
+        sub.setAttribute('y', (m.y+30).toFixed(2));
+        sub.setAttribute('font-size', Math.min(11, Math.max(8, m.h/7)).toFixed(1));
         sub.setAttribute('class','tile-sub');
         sub.textContent = r.prefix ? r.prefix : (formatIPv6(r.base)+' …');
         g.appendChild(sub);
@@ -820,12 +841,77 @@ function renderAll(){
 
     svg.appendChild(g);
   }
+}
+
+function renderAll(){
+  renderBreadcrumb();
+  const list = currentList();
+  const items = list.map(e=>({...e, value:Number(e.size)}));
+  cachedRects = squarify(items, MAP_BOUNDS.x0, MAP_BOUNDS.y0, MAP_BOUNDS.x1, MAP_BOUNDS.y1);
+  if(lastZoomedView !== currentView){ resetDrillImmediate(); lastZoomedView = currentView; }
+  drawTiles();
   pulseTarget = null;
 
   renderLegend(list);
-  const selEntry = selectedBase!==null ? rects.find(r=>r.base===selectedBase) : null;
+  const selEntry = selectedBase!==null ? cachedRects.find(r=>r.base===selectedBase) : null;
   showDetail(selEntry || null, currentView==='unicast' ? sizeOf(3) : null);
 }
+
+/* ---------------- map drill zoom: smooth, cursor-anchored, mouse-wheel driven ---------------- */
+const DRILL_MIN_FRACTION = 1/32; // how far in you can drill (~32x)
+
+function clampDrillTarget(){
+  const fullW = MAP_BOUNDS.x1-MAP_BOUNDS.x0, fullH = MAP_BOUNDS.y1-MAP_BOUNDS.y0;
+  let vw = drillTarget.x1-drillTarget.x0, vh = drillTarget.y1-drillTarget.y0;
+  if(vw>=fullW || vh>=fullH){ drillTarget = {...MAP_BOUNDS}; return; }
+  vw = Math.max(fullW*DRILL_MIN_FRACTION, vw);
+  vh = Math.max(fullH*DRILL_MIN_FRACTION, vh);
+  const x0 = Math.min(MAP_BOUNDS.x1-vw, Math.max(MAP_BOUNDS.x0, drillTarget.x0));
+  const y0 = Math.min(MAP_BOUNDS.y1-vh, Math.max(MAP_BOUNDS.y0, drillTarget.y0));
+  drillTarget = {x0, y0, x1:x0+vw, y1:y0+vh};
+}
+
+function stepDrillAnimation(){
+  const ease = 0.22;
+  drillView = {
+    x0: drillView.x0 + (drillTarget.x0-drillView.x0)*ease,
+    y0: drillView.y0 + (drillTarget.y0-drillView.y0)*ease,
+    x1: drillView.x1 + (drillTarget.x1-drillView.x1)*ease,
+    y1: drillView.y1 + (drillTarget.y1-drillView.y1)*ease
+  };
+  const settled = ['x0','y0','x1','y1'].every(k => Math.abs(drillTarget[k]-drillView[k])<0.05);
+  if(settled) drillView = {...drillTarget};
+  drawTiles();
+  drillRafId = settled ? null : requestAnimationFrame(stepDrillAnimation);
+}
+function scheduleDrillAnimation(){
+  if(drillRafId===null) drillRafId = requestAnimationFrame(stepDrillAnimation);
+}
+function resetDrillImmediate(){
+  if(drillRafId!==null){ cancelAnimationFrame(drillRafId); drillRafId=null; }
+  drillView = {...MAP_BOUNDS};
+  drillTarget = {...MAP_BOUNDS};
+}
+
+svg.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  const pt = svg.createSVGPoint();
+  pt.x = e.clientX; pt.y = e.clientY;
+  const svgP = pt.matrixTransform(svg.getScreenCTM().inverse());
+  const factor = Math.exp(-e.deltaY*0.0018); // >1 drill in, <1 drill out
+  const curVW = drillTarget.x1-drillTarget.x0, curVH = drillTarget.y1-drillTarget.y0;
+  const newVW = curVW/factor, newVH = curVH/factor;
+  // virtual-space point currently under the cursor, per the (authoritative) target window
+  const scaleX = (MAP_BOUNDS.x1-MAP_BOUNDS.x0)/curVW, scaleY = (MAP_BOUNDS.y1-MAP_BOUNDS.y0)/curVH;
+  const vx = drillTarget.x0 + (svgP.x-MAP_BOUNDS.x0)/scaleX;
+  const vy = drillTarget.y0 + (svgP.y-MAP_BOUNDS.y0)/scaleY;
+  const newScaleX = (MAP_BOUNDS.x1-MAP_BOUNDS.x0)/newVW, newScaleY = (MAP_BOUNDS.y1-MAP_BOUNDS.y0)/newVH;
+  const x0 = vx - (svgP.x-MAP_BOUNDS.x0)/newScaleX;
+  const y0 = vy - (svgP.y-MAP_BOUNDS.y0)/newScaleY;
+  drillTarget = {x0, y0, x1:x0+newVW, y1:y0+newVH};
+  clampDrillTarget();
+  scheduleDrillAnimation();
+}, {passive:false});
 
 /* ---------------- locate ---------------- */
 function findContaining(list, addr){
