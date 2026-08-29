@@ -566,11 +566,47 @@ function findSpecialWithin(base, size){
 }
 
 /* ---------------- squarified treemap ---------------- */
+/* plain squarify only guarantees equal AREA for equal-valued items — two tiles of the
+   same address count can still land in different rows and come out as different
+   rectangles (one wide, one tall). Pack same-valued items as a single super-tile so
+   squarify places them together, then split that rectangle into a uniform grid so
+   every tied tile renders as an identical shape. */
+function subdivideGrid(x,y,w,h,n){
+  if(n<=0) return [];
+  if(n===1) return [{x,y,w,h}];
+  let rows = Math.round(Math.sqrt(n * h / w));
+  rows = Math.max(1, Math.min(n, rows));
+  const base = Math.floor(n/rows), extra = n % rows;
+  const cellH = h/rows;
+  const cells = [];
+  let cy = y;
+  for(let ri=0; ri<rows; ri++){
+    const cnt = base + (ri<extra ? 1 : 0);
+    const cellW = w/cnt;
+    let cx = x;
+    for(let ci=0; ci<cnt; ci++){
+      cells.push({x:cx, y:cy, w:cellW, h:cellH});
+      cx += cellW;
+    }
+    cy += cellH;
+  }
+  return cells;
+}
 function squarify(items, x0,y0,x1,y1){
-  const total = items.reduce((s,i)=>s+i.value,0);
+  const groups = new Map();
+  for(const it of items){
+    if(!groups.has(it.value)) groups.set(it.value, []);
+    groups.get(it.value).push(it);
+  }
+  const packItems = [];
+  for(const [value, members] of groups){
+    packItems.push(members.length===1 ? members[0] : {__group:members, value:value*members.length});
+  }
+
+  const total = packItems.reduce((s,i)=>s+i.value,0);
   if(total<=0) return [];
   const area = (x1-x0)*(y1-y0);
-  let rest = items.slice().sort((a,b)=>b.value-a.value).map(i=>({...i, area: i.value/total*area}));
+  let rest = packItems.slice().sort((a,b)=>b.value-a.value).map(i=>({...i, area: i.value/total*area}));
   const result = [];
   let rectX=x0, rectY=y0, rectW=x1-x0, rectH=y1-y0;
   let row = [];
@@ -616,7 +652,17 @@ function squarify(items, x0,y0,x1,y1){
     }
   }
   if(row.length>0) layoutRow(row, Math.min(rectW,rectH));
-  return result;
+
+  const expanded = [];
+  for(const r of result){
+    if(r.__group){
+      const cells = subdivideGrid(r.x, r.y, r.w, r.h, r.__group.length);
+      r.__group.forEach((member, idx)=> expanded.push({...member, ...cells[idx]}));
+    } else {
+      expanded.push(r);
+    }
+  }
+  return expanded;
 }
 
 /* ---------------- map view state + render ---------------- */
