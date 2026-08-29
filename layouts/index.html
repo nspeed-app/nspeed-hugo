@@ -26,11 +26,11 @@
 			<nav id="home-nav" class="site-nav">
 				{{ partialCached "menu.html" . }}
 				{{- if eq .Site.Language.Lang "fr" }}
-				<a href="{{ "ipv6/calc/" | absURL }}">Calculateur IPv6</a>
-				<a href="{{ "ipv6/map/" | absURL }}">Carte des adresses IPv6</a>
+				<a href="{{ "ipv6/?view=calc" | absURL }}">Calculateur IPv6</a>
+				<a href="{{ "ipv6/?view=map" | absURL }}">Carte des adresses IPv6</a>
 				{{- else }}
-				<a href="{{ "ipv6/calc/" | absURL }}">IPv6 Calculator</a>
-				<a href="{{ "ipv6/map/" | absURL }}">IPv6 Address Map</a>
+				<a href="{{ "ipv6/?view=calc" | absURL }}">IPv6 Calculator</a>
+				<a href="{{ "ipv6/?view=map" | absURL }}">IPv6 Address Map</a>
 				{{- end }}
 				{{- if gt (len hugo.Sites) 1 }}
 					{{- $p := . }}

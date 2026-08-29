@@ -51,7 +51,7 @@ module:
       target: static
     - source: ipv6
       target: static/ipv6
-      excludeFiles: "/map/scripts/**"
+      excludeFiles: "/scripts/**"
 
 author:
   name: Jean-Francois Giorgi
