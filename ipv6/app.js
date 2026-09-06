@@ -528,10 +528,12 @@ svg.addEventListener('pointermove', (e)=>{
     if(Math.hypot(dxClient,dyClient)<DRAG_THRESHOLD) return;
     panMoved = true;
     svg.style.cursor = 'grabbing';
+    document.body.style.userSelect = 'none';
     // only capture once we know it's a drag — capturing on every plain click would retarget
     // the resulting synthetic 'click' event to the svg itself, so tiles never see it
     try{ svg.setPointerCapture(e.pointerId); }catch(err){}
   }
+  e.preventDefault();
   const p0 = svg.createSVGPoint(); p0.x=panStartClientX; p0.y=panStartClientY;
   const p1 = svg.createSVGPoint(); p1.x=e.clientX; p1.y=e.clientY;
   const ctmInv = svg.getScreenCTM().inverse();
@@ -552,6 +554,7 @@ function endPan(){
   isPanning = false;
   if(panMoved) suppressNextTileClick = true;
   panMoved = false;
+  document.body.style.userSelect = '';
   updateCursor();
 }
 svg.addEventListener('pointerup', endPan);
