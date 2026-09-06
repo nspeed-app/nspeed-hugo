@@ -77,15 +77,16 @@
   #view-map .searchForm button.ghost{ background:transparent; }
   #view-map .searchForm button:disabled{ opacity:.5; cursor:not-allowed; }
 
-  #view-map .breadcrumb{ display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim); margin-bottom:10px; }
+  #view-map .breadcrumbRow{ display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px; }
+  #view-map .breadcrumb{ display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:12.5px; color:var(--text-dim); }
   #view-map .breadcrumb .crumb{ cursor:pointer; }
   #view-map .breadcrumb .crumb:hover{ color:var(--cyan); }
   #view-map .breadcrumb .crumb.current{ color:var(--text); cursor:default; }
   #view-map .breadcrumb .sep{ color:var(--text-faint); }
 
-  #view-map .map-card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; position:relative; }
+  #view-map .map-card{ background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:18px; }
   #view-map svg{ width:100%; height:auto; display:block; border-radius:6px; overflow:hidden; touch-action:none; cursor:zoom-in; }
-  #view-map .zoomHint{ position:absolute; top:28px; right:28px; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); background:rgba(10,13,18,0.55); padding:4px 9px; border-radius:5px; pointer-events:none; }
+  #view-map .zoomHint{ flex:0 0 auto; font-family:var(--mono); font-size:10.5px; color:var(--text-faint); }
   #view-map .tile{ cursor:default; transition:opacity .12s; }
   #view-map .tile:hover{ opacity:.86; }
   #view-map .tile-label{ font-family:var(--mono); pointer-events:none; fill:#0A0D12; font-weight:600; }
