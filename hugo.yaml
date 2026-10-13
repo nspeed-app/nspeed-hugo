@@ -102,7 +102,7 @@ menu:
       url: https://github.com/nspeed-app/nspeed/releases/
       weight: 10
     - name: Changelog
-      url: posts/changelog/
+      url: https://github.com/nspeed-app/nspeed/blob/main/CHANGELOG.md
       weigth: 20
     - name: About
       url: about-nspeed/
