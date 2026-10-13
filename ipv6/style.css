@@ -121,6 +121,15 @@
   #view-map .detail-special .sp-rfc{ font-family:var(--mono); font-size:11px; color:var(--text-faint); }
   #view-map .detail-actions{ margin-top:14px; }
 
+  #view-map .detail-rdap{ margin-top:14px; padding-top:14px; border-top:1px solid var(--border-soft); }
+  #view-map .rdap-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:8px; }
+  #view-map .rdap-head .k{ font-family:var(--mono); font-size:10px; color:var(--text-faint); text-transform:uppercase; letter-spacing:.07em; }
+  #view-map .rdap-head a{ color:var(--cyan); text-decoration:none; border-bottom:1px dotted var(--cyan); font-size:11.5px; }
+  #view-map .rdap-head a:hover{ border-bottom-style:solid; }
+  #view-map .rdap-loading, #view-map .rdap-empty{ font-family:var(--mono); font-size:12.5px; color:var(--text-faint); }
+  #view-map .rdap-error{ font-family:var(--mono); font-size:12.5px; color:var(--red); margin-bottom:8px; }
+  #view-map .rdap-remarks{ margin-top:10px; font-size:12.5px; color:var(--text-dim); line-height:1.5; display:flex; flex-direction:column; gap:4px; }
+
   #view-map footer{ margin-top:28px; text-align:center; font-family:var(--mono); font-size:11px; color:var(--text-faint); }
   #view-map footer a{ color:var(--text-faint); }
 

@@ -341,12 +341,68 @@ function showDetail(entry){
     </div>
     <div class="detail-grid">${rows}</div>
     ${entry.note ? `<div class="detail-note">${entry.note}</div>` : ''}
+    <div class="detail-rdap" id="detailRdap"></div>
     ${specialHtml}
     ${openInCalcHtml}
   `;
 
   if(entry.prefix){
     document.getElementById('openInCalcBtn').addEventListener('click', ()=> openInCalculator(entry.prefix));
+  }
+  renderRdapSection(entry);
+}
+
+/* ---------------- RDAP lookup UI (fetch/normalize logic lives in ipv6-common.js) ---------------- */
+function rdapCacheKeyFor(entry){ return entry.base.toString()+'/'+entry.prefixLen; }
+
+function renderRdapResult(container, json){
+  if(!container.isConnected) return;
+  const r = normalizeRdap(json);
+  const rows = [
+    r.name ? `<div><span class="k">Name</span><span class="v">${r.name}</span></div>` : '',
+    r.handle ? `<div><span class="k">Handle</span><span class="v">${r.handle}</span></div>` : '',
+    r.country ? `<div><span class="k">Country</span><span class="v">${r.country}</span></div>` : '',
+    r.type ? `<div><span class="k">Type</span><span class="v">${r.type}</span></div>` : '',
+    r.status ? `<div><span class="k">Status</span><span class="v">${r.status}</span></div>` : '',
+    r.registered ? `<div><span class="k">Registered</span><span class="v">${r.registered.slice(0,10)}</span></div>` : '',
+    r.lastChanged ? `<div><span class="k">Last changed</span><span class="v">${r.lastChanged.slice(0,10)}</span></div>` : '',
+    r.abuseEmail ? `<div><span class="k">Abuse contact</span><span class="v"><a href="mailto:${r.abuseEmail}">${r.abuseEmail}</a></span></div>` : ''
+  ].filter(Boolean).join('');
+  const remarksHtml = r.remarks.length
+    ? `<div class="rdap-remarks">${r.remarks.map(rm=>`<div>${rm.title ? `<b>${rm.title}:</b> ` : ''}${rm.description}</div>`).join('')}</div>`
+    : '';
+  const linkHtml = r.selfUrl ? `<a href="${r.selfUrl}" target="_blank" rel="noopener noreferrer">View full record ↗</a>` : '';
+  container.innerHTML = `
+    <div class="rdap-head"><span class="k">RDAP record</span>${linkHtml}</div>
+    <div class="detail-grid">${rows || '<div class="rdap-empty">Record found, but it has no descriptive fields.</div>'}</div>
+    ${remarksHtml}
+  `;
+}
+
+function renderRdapError(container, err, entry){
+  if(!container.isConnected) return;
+  const msg = (err && err.message) ? err.message : 'RDAP lookup failed.';
+  container.innerHTML = `<div class="rdap-error">${msg}</div>${err && err.rdapNotFound ? '' : '<button class="btn ghost small" id="rdapRetryBtn">Retry</button>'}`;
+  const retryBtn = document.getElementById('rdapRetryBtn');
+  if(retryBtn) retryBtn.addEventListener('click', ()=> triggerRdapFetch(container, entry));
+}
+
+function triggerRdapFetch(container, entry){
+  container.innerHTML = `<div class="rdap-loading">Looking up RDAP record…</div>`;
+  fetchRdap(entry.base, entry.prefixLen)
+    .then(json => renderRdapResult(container, json))
+    .catch(err => renderRdapError(container, err, entry));
+}
+
+function renderRdapSection(entry){
+  const container = document.getElementById('detailRdap');
+  if(!container) return;
+  const key = rdapCacheKeyFor(entry);
+  if(rdapCache.has(key)){
+    triggerRdapFetch(container, entry);
+  } else {
+    container.innerHTML = `<button class="btn ghost small" id="fetchRdapBtn">Fetch RDAP record →</button>`;
+    document.getElementById('fetchRdapBtn').addEventListener('click', ()=> triggerRdapFetch(container, entry));
   }
 }
 

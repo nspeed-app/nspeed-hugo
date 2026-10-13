@@ -77,3 +77,102 @@ function formatIPv6(addr){
 }
 
 function fmtBig(n){ return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ','); }
+
+/* ---------------- RDAP (Registration Data Access Protocol) ---------------- */
+/* IANA's bootstrap file maps CIDR ranges to the RIR that's authoritative for RDAP over them
+   (RFC 7484) — fetched once and cached, then resolved locally per address via longest-prefix
+   match so any block (not just ones we already classified) can be looked up. */
+const RDAP_BOOTSTRAP_URL = 'https://data.iana.org/rdap/ipv6.json';
+let rdapBootstrapPromise = null;
+function loadRdapBootstrap(){
+  if(!rdapBootstrapPromise){
+    rdapBootstrapPromise = fetch(RDAP_BOOTSTRAP_URL).then(res=>{
+      if(!res.ok) throw new Error('RDAP bootstrap fetch failed (HTTP '+res.status+')');
+      return res.json();
+    });
+    rdapBootstrapPromise.catch(()=>{ rdapBootstrapPromise = null; });
+  }
+  return rdapBootstrapPromise;
+}
+
+function findRdapBase(bootstrap, addr){
+  let best = null, bestPrefixLen = -1;
+  for(const [cidrs, urls] of bootstrap.services){
+    for(const cidr of cidrs){
+      let base, prefixLen;
+      try{ ({addr:base, prefixLen} = parseCIDR(cidr)); base = networkAddress(base, prefixLen); }
+      catch(e){ continue; }
+      if(addr>=base && addr<base+sizeOf(prefixLen) && prefixLen>bestPrefixLen){
+        bestPrefixLen = prefixLen;
+        best = urls[0];
+      }
+    }
+  }
+  return best;
+}
+
+async function rdapUrlFor(addr, prefixLen){
+  const bootstrap = await loadRdapBootstrap();
+  const base = findRdapBase(bootstrap, addr);
+  if(!base) return null;
+  const withSlash = base.endsWith('/') ? base : base+'/';
+  return withSlash + 'ip/' + formatIPv6(addr) + (prefixLen!=null ? '/'+prefixLen : '');
+}
+
+const rdapCache = new Map();
+/* returns a promise of the raw RDAP JSON for a block; in-flight/successful lookups are cached
+   so re-selecting the same tile doesn't re-fetch, while transient failures are evicted so a
+   retry actually retries */
+function fetchRdap(addr, prefixLen){
+  const key = addr.toString()+'/'+prefixLen;
+  if(rdapCache.has(key)) return rdapCache.get(key);
+  const promise = (async()=>{
+    const url = await rdapUrlFor(addr, prefixLen);
+    if(!url){
+      const err = new Error('No RDAP service is delegated for this range — it may be an IETF-reserved block rather than an RIR allocation.');
+      err.rdapNotFound = true;
+      throw err;
+    }
+    const res = await fetch(url, {headers:{Accept:'application/rdap+json'}});
+    if(res.status===404){
+      const err = new Error('No RDAP record exists for this exact range (it may only exist for a larger covering block).');
+      err.rdapNotFound = true;
+      throw err;
+    }
+    if(!res.ok) throw new Error('RDAP request failed (HTTP '+res.status+')');
+    const json = await res.json();
+    json.__rdapUrl = url;
+    return json;
+  })();
+  rdapCache.set(key, promise);
+  promise.catch(err=>{ if(!err || !err.rdapNotFound) rdapCache.delete(key); });
+  return promise;
+}
+
+function findVCardValue(vcardArray, propName){
+  if(!vcardArray || !Array.isArray(vcardArray[1])) return null;
+  const prop = vcardArray[1].find(p=>p[0]===propName);
+  return prop ? prop[3] : null;
+}
+/* best-effort extraction of the fields worth showing — RIRs vary somewhat in how they
+   populate entities/vcards, so every field here is optional */
+function normalizeRdap(json){
+  const events = json.events || [];
+  const findEvent = action => { const e = events.find(e=>e.eventAction===action); return e ? e.eventDate : null; };
+  const entities = json.entities || [];
+  const abuseEntity = entities.find(e=> (e.roles||[]).includes('abuse'));
+  const registrantEntity = entities.find(e=> (e.roles||[]).includes('registrant')) || entities[0];
+  const abuseEmail = abuseEntity ? findVCardValue(abuseEntity.vcardArray, 'email') : null;
+  return {
+    handle: json.handle || null,
+    name: json.name || (registrantEntity && findVCardValue(registrantEntity.vcardArray,'fn')) || null,
+    country: json.country || null,
+    type: json.type || null,
+    status: Array.isArray(json.status) && json.status.length ? json.status.join(', ') : null,
+    registered: findEvent('registration'),
+    lastChanged: findEvent('last changed'),
+    abuseEmail,
+    remarks: (json.remarks||[]).map(r=>({title:r.title||null, description:(r.description||[]).join(' ')})).filter(r=>r.description),
+    selfUrl: json.__rdapUrl || (((json.links||[]).find(l=>l.rel==='self')||{}).href) || null
+  };
+}
